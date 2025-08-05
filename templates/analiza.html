@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard budżetowy firmy</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/static/global.css">
+</head>
+<body>
+    {% include 'navbar.html' %}
+    <h1>Dashboard budżetowy firmy</h1>
+    <form method="get" class="dashboard-form" style="flex-direction:column;align-items:center;gap:18px;">
+        <span class="branch-label">Wybierz typ zestawienia:</span>
+        <div class="branch-btn-group" style="justify-content:center;">
+            <button type="submit" name="typ" value="Przychody" class="branch-btn{% if typ == 'Przychody' %} active{% endif %}">Przychody</button>
+            <button type="submit" name="typ" value="Wydatki" class="branch-btn{% if typ == 'Wydatki' %} active{% endif %}">Wydatki</button>
+        </div>
+        {% if branches|length > 0 %}
+        <span class="branch-label">Wybierz gałąź:</span>
+        <div class="branch-btn-group" style="justify-content:center;">
+            {% for b in branches %}
+                <form method="get" style="display:inline;">
+                    <input type="hidden" name="typ" value="{{ typ }}">
+                    <button type="submit" name="branch" value="{{ b }}" class="branch-btn{% if b == branch %} active{% endif %}">{{ b }}</button>
+                </form>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </form>
+    <h2>Zestawienie dla gałęzi: {{ branch }}</h2>
+    <div class="table-scroll">
+    <table><tbody>
+        <tr class="sumarow">
+            <td>SUMA</td>
+            {% for v in suma_row_list %}
+                <td>{{ v|format_number }}</td>
+            {% endfor %}
+        </tr>
+        <tr>
+            <th><a href="?branch={{ branch }}&sort_by=Kontrahent&sort_order={% if sort_by=='Kontrahent' and sort_order=='desc' %}asc{% else %}desc{% endif %}" style="color:inherit;text-decoration:none">Kontrahent{% if sort_by=='Kontrahent' %} {% if sort_order=='desc' %}↓{% else %}↑{% endif %}{% endif %}</a></th>
+            {% for m in months_order %}
+                <th><a href="?branch={{ branch }}&sort_by={{ m }}&sort_order={% if sort_by==m and sort_order=='desc' %}asc{% else %}desc{% endif %}" style="color:inherit;text-decoration:none">{{ m }}{% if sort_by==m %} {% if sort_order=='desc' %}↓{% else %}↑{% endif %}{% endif %}</a></th>
+            {% endfor %}
+            <th><a href="?branch={{ branch }}&sort_by=Suma roczna&sort_order={% if sort_by=='Suma roczna' and sort_order=='desc' %}asc{% else %}desc{% endif %}" style="color:inherit;text-decoration:none">Suma roczna{% if sort_by=='Suma roczna' %} {% if sort_order=='desc' %}↓{% else %}↑{% endif %}{% endif %}</a></th>
+        </tr>
+        {% if kontrahenci_sorted|length == 0 %}
+            <tr><td colspan="{{ months_order|length + 2 }}" style="text-align:center;color:#888;font-size:1.2rem;padding:24px;">Brak danych dla wybranej gałęzi.</td></tr>
+        {% else %}
+            {% for kontrahent in kontrahenci_sorted %}
+                <tr>
+                    <td>{{ kontrahent }}</td>
+                    {% for m in months_order %}
+                        <td>{{ pivot[kontrahent][m]|format_number }}</td>
+                    {% endfor %}
+                    <td>{{ pivot[kontrahent]['Suma roczna']|format_number }}</td>
+                </tr>
+            {% endfor %}
+        {% endif %}
+    </tbody></table>
+    </div>
+    {% include 'footer.html' %}
+</body>
+</html>

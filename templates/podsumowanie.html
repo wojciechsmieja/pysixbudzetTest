@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Podsumowanie budżetu</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/static/global.css">
+</head>
+<body>
+    {% include 'navbar.html' %}
+    <h1>Podsumowanie budżetu</h1>
+    {% if error %}
+    <div style="color:red;text-align:center;font-size:1.2rem;margin:16px 0;">{{ error }}</div>
+    {% endif %}
+    <h2>Sumy przychodów wg gałęzi i miesięcy</h2>
+    <div class="table-scroll">
+    <table>
+        <tr>
+            <th>Gałąź</th>
+            {% for m in months_order %}
+                <th>{{ m }}</th>
+            {% endfor %}
+            <th>Suma roczna</th>
+        </tr>
+        {% if pivot_income and pivot_income|length > 0 %}
+            {% for branch, values in pivot_income.items() %}
+                <tr>
+                    <td>{{ branch }}</td>
+                    {% for v in values %}
+                        <td>{{ v|format_number }}</td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        {% else %}
+            <tr><td colspan="{{ months_order|length + 2 }}" style="text-align:center;color:#888;font-size:1.1rem;padding:18px;">Brak danych o przychodach.</td></tr>
+        {% endif %}
+    </table>
+    </div>
+    <h2>Sumy wydatków wg gałęzi i miesięcy</h2>
+    <div class="table-scroll">
+    <table>
+        <tr>
+            <th>Gałąź</th>
+            {% for m in months_order %}
+                <th>{{ m }}</th>
+            {% endfor %}
+            <th>Suma roczna</th>
+        </tr>
+        {% if pivot_expense and pivot_expense|length > 0 %}
+            {% for branch, values in pivot_expense.items() %}
+                <tr>
+                    <td>{{ branch }}</td>
+                    {% for v in values %}
+                        <td>{{ v|format_number }}</td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        {% else %}
+            <tr><td colspan="{{ months_order|length + 2 }}" style="text-align:center;color:#888;font-size:1.1rem;padding:18px;">Brak danych o wydatkach.</td></tr>
+        {% endif %}
+    </table>
+    </div>
+    {% include 'footer.html' %}
+</body>
+</html>

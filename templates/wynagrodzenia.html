@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Podział wynagrodzeń</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/static/global.css">
+</head>
+<body>
+    {% include 'navbar.html' %}
+    <h1>Podział wynagrodzeń na osoby i miesiące</h1>
+    {% if error %}
+    <div style="color:red;text-align:center;font-size:1.1rem;margin:16px 0;">{{ error }}</div>
+    {% endif %}
+    <div class="table-scroll">
+    <table>
+        <tr>
+            <th>Osoba</th>
+            {% for m in months_order %}
+                <th>{{ m }}</th>
+            {% endfor %}
+            <th>Suma roczna</th>
+        </tr>
+        {% if wynagrodzenia_podzial and wynagrodzenia_podzial|length > 0 and suma_wyplat > 0 %}
+            {% for osoba, values in wynagrodzenia_podzial.items() %}
+            {% set suma_osoby = values|sum %}
+            <tr>
+                <td>{{ osoba }}</td>
+                {% for v in values %}
+                    <td>{{ v|format_number }}</td>
+                {% endfor %}
+                <td class="sumarow">{{ suma_osoby|format_number }}</td>
+            </tr>
+            {% endfor %}
+        {% else %}
+            <tr><td colspan="{{ months_order|length + 2 }}" style="text-align:center;color:#888;font-size:1.1rem;padding:18px;">Brak danych o wynagrodzeniach.</td></tr>
+        {% endif %}
+    </table>
+    </div>
+    {% include 'footer.html' %}
+</body>
+</html>
