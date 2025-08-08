@@ -1,119 +1,7 @@
-/*document.addEventListener("DOMContentLoaded", function () {
-    const table = document.querySelector("table");
-
-    table.addEventListener("click", function (e) {
-        if (e.target.classList.contains("edit-btn")) {
-            const btn = e.target;
-            const row = btn.closest("tr");
-
-            if (btn.textContent === "Edit") {
-                // Zamiana komórek na inputy
-                row.querySelectorAll("td").forEach((cell, index) => {
-                    // pomijamy ostatnią kolumnę (przyciski)
-                    if (index < row.cells.length - 1) {
-                        const value = cell.textContent.trim();
-                        cell.innerHTML = `<input type="text" value="${value}" />`;
-                    }
-                });
-                btn.textContent = "Save";
-                btn.classList.add("save-btn");
-            } 
-            else if (btn.textContent === "Save") {
-                // Zapis wartości z inputów do tekstu
-                row.querySelectorAll("td").forEach((cell, index) => {
-                    if (index < row.cells.length - 1) {
-                        const input = cell.querySelector("input");
-                        if (input) {
-                            cell.textContent = input.value;
-                        }
-                    }
-                });
-                btn.textContent = "Edit";
-                btn.classList.remove("save-btn");
-            }
-        }
-    });
-});
-*/
-//ten kod poniżej działa w sensie zmienia rzeczy w tabeli ale nie działa przycisk edytuj tak jakbym chciał, bo miały się dwa pojawiać a się pojawia tylko save
-/*
-let changed = false;
-let originalData =[];
-document.addEventListener("DOMContentLoaded", function () {
-    const table = document.querySelector("table");
-    
-    table.addEventListener("click", function (e) {
-        const btn = e.target;
-        if (btn.classList.contains("edit-btn") && !changed){
-            const row = btn.closest("tr");
-            row.querySelectorAll("td").forEach((cell, index) =>{
-                // pomijamy ostatnią kolumnę (przyciski)
-                if (index < row.cells.length - 1) {
-                    const value = cell.textContent.trim();
-                    originalData.push(value);
-                    cell.innerHTML = `<input type="text" value="${value}" />`;
-                }
-            })
-            const cell = row.querySelector("td:last-child");
-            cell.innerHTML="";
-
-            const saveBtn = document.createElement("button");
-            saveBtn.textContent = "Save";
-            saveBtn.classList.add("save-btn");
-            const editBtn = document.createElement("button");
-            editBtn.textContent = "Edit";
-            editBtn.classList.add("edit-btn");
-
-            cell.appendChild(editBtn);
-            cell.appendChild(saveBtn);
-
-            changed = true;
-        }else if (btn.classList.contains("save-btn") && changed){
-            const row = btn.closest("tr");
-
-            row.querySelectorAll("td").forEach((cell, index) =>{
-                if( index < row.cells.length - 1){
-                    const input = cell.querySelector("input").value.trim();
-                    cell.textContent = input;
-                }
-            });
-
-            const cell = row.querySelector("td:last-child");
-            cell.innerHTML = "";
-
-            const newEditBtn = document.createElement("button");
-            newEditBtn.textContent = "Edit";
-            newEditBtn.classList.add("edit-btn");
-            cell.appendChild(newEditBtn);
-
-            changed = false;
-            originalData = [];
-        }else if( e.target.classList.contains("edit-btn")&& changed){
-            const row = btn.closest("tr");
-            
-            row.querySelectorAll("td").forEach((cell, index) =>{
-                if (index < row.cells.length -1 ){
-                    cell.textContent = originalData[index];
-                }
-            });
-            const cell = row.querySelector("td:last-child");
-            cell.innerHTML ="";
-
-            const newEditBtn = document.createElement("button");
-            newEditBtn.classList.add("edit-btn");
-            newEditBtn.textContent = "edit";
-            cell.appendChild(newEditBtn);
-            changed = false;
-            originalData = [];
-         
-           }
-    });
-});
-*/
 //robie aby po nacisnięciu przyisku "edytuj" pojawiał się formularz do zmiany wartości w tabeli
 let editingRow = null;
 let originalData = [];
-const columnTypes = {
+const columnTypesIncome = {
     1: "text", // nr dokumentu
     2: "text", // kontrahent
     3: "text",//rodzaj
@@ -126,25 +14,45 @@ const columnTypes = {
     10: "text",//metoda plATNOSCI
     11: "text",//etykiety
 }
+const columnTypesOutcome = {
+    1: "text", // nr dokumentu
+    2: "text", // kontrahent
+    3: "date",//data wystawienia
+    4: "date", //termin platnosci
+    5: "number",//zaplacono
+    6: "number",//pozostalo
+    7: "number",//razem
+    8: "number",//kwota netto
+    9: "number",//kwota vat
+    10: "text",//etykiety
+}
 
 document.addEventListener("DOMContentLoaded", function () {
+    //odwolanie do tabeli
     const table = document.querySelector("table");
-
+    
     table.addEventListener("click", function (e) {
         const btn = e.target;
 
         //Click Edit button
         if (btn.classList.contains("edit-btn") && !editingRow) {
+            //odwolanie do wiersza, przypisanie do zmiennej i wyczyszczenie tablicy
             const row = btn.closest("tr");
             editingRow = row;
             originalData = [];
-
+            //dodanie klasy na wiersz
             row.classList.add("editing");
-
+            //odwolanie do 1 komorki w wierszu i dodanie do tablicy -> tego nie zmieniamy (to nasz index)
             const firstVal = row.querySelector("td:first-child").textContent.trim();
             originalData.push(firstVal);
 
+            //pobranie i sprawdzenie sheet-u -> ustawinie odpowiednich typów inputów 
+            const type = document.querySelector("input[name='typ']");
+            const typeValue = type ? type.value.trim() : "";
+            const columnTypes = typeValue === "Przychody" ? columnTypesIncome : columnTypesOutcome;
+            //iteracja i zamiana komorek na inputy i kopia wartosci do tablicy
             row.querySelectorAll("td").forEach((cell, index) => {
+                //opuszczenie 1 i ostatniego indexu
                 if (index < row.cells.length - 1 && index !==0 ) {
                     const value = cell.textContent.trim();
                     originalData.push(value);
@@ -152,7 +60,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     cell.innerHTML = `<input type="${inputType}" data-type="${inputType}" value="${value}" />`;
                 }
             });
-
+            //czyszczenie ostatniej komorki wiersza -> dodanie 2 innych przyciskow
             const cell = row.querySelector("td:last-child");
             cell.innerHTML = "";
 
@@ -170,6 +78,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         //Click Save button
         else if (btn.classList.contains("save-btn") && editingRow) {
+            //odwolanie do wiersza, pobranie wartosci z inputow i walidacja
             const row = editingRow;
             const inputs = row.querySelectorAll("input");
             const kontrahent = row.dataset.kontrahent;
@@ -186,7 +95,7 @@ document.addEventListener("DOMContentLoaded", function () {
             if(!validateRow()){
                 return;
             }
-
+            //pobranie naglowkow i wartosci z inputow
             const naglowki =[];
             const wartosci =[];
 
@@ -198,6 +107,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 naglowki.push(headerText);
                 wartosci.push(input.value.trim());
             });
+            //sprawdzenie czy naglowki sa puste
             if(naglowki.some(n => n === "")){
                 alert("Naglowki nie mogą być puste!");
             }
@@ -205,7 +115,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 alert("Wszystkie wartości muszą być wypełnione!");
                 return;
             }*/
-
+            //zapisanie wartosci z inputow do komorek
             row.querySelectorAll("td").forEach((cell, index) => {
                 if (index>0 && index < row.cells.length - 1) {
                     const input = cell.querySelector("input");
@@ -215,11 +125,9 @@ document.addEventListener("DOMContentLoaded", function () {
                     }
                 }
             });
-
-
-
+            //usuniecie klasy 
             row.classList.remove("editing");
-
+            //czyszczenie ostatniej komorki wiersza i dodanie przycisku edytuj
             const cell = row.querySelector("td:last-child");
             cell.innerHTML = "";
 
@@ -228,7 +136,7 @@ document.addEventListener("DOMContentLoaded", function () {
             editBtn.classList.add("edit-btn");
             cell.appendChild(editBtn);
 
-            //Send data to serwer
+            //Zebranie danyych do wyslania na backend
             const formData = new FormData();
             formData.append("kontrahent", kontrahent);
             const typInput = document.querySelector("input[name='typ']");
@@ -256,7 +164,7 @@ document.addEventListener("DOMContentLoaded", function () {
             });
             //debug formData
             console.log('FormData:', Array.from(formData.entries()));
-            
+            //wysalnie
             fetch('/zapisz',{
                 method: 'POST',
                 body:formData,
@@ -324,7 +232,7 @@ function validateRow() {
         }
 
         if (type === "date") {
-            if (value !== "" && isNaN(Date.parse(value))) {
+            if (value == "" && isNaN(Date.parse(value))) {
                 isValid = false;
                 errors.push(`Pole "${colName}" musi być poprawną datą (YYYY-MM-DD).`);
             }
@@ -336,39 +244,3 @@ function validateRow() {
     }
     return isValid;
 }
-
-
-/*
-function saveRow(row) {
-    const kontrahent = row.dataset.kontrahent;
-    const typ = document.querySelector('[name="typ"]').value;
-    const branch = document.querySelector('[name="branch"]').value;
-
-    const inputs = row.querySelectorAll('input[data-miesiac]');
-    const miesiace = [];
-    const wartosci = [];
-
-    inputs.forEach(input => {
-        miesiace.push(input.dataset.miesiac);
-        wartosci.push(input.value);
-    });
-
-    const formData = new FormData();
-    formData.append('typ', typ);
-    formData.append('branch', branch);
-    formData.append('kontrahent', kontrahent);
-    miesiace.forEach(m => formData.append('miesiace[]', m));
-    wartosci.forEach(v => formData.append('wartosci[]', v));
-
-    fetch('/zapisz', {
-        method: 'POST',
-        body: formData
-    })
-    .then(res => {
-        if (!res.ok) throw new Error('Błąd zapisu');
-        alert('Zapisano zmiany!');
-        location.reload();  // lub odśwież dane w tabeli dynamicznie
-    })
-    .catch(err => alert(err.message));
-}
-*/

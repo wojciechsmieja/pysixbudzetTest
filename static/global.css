@@ -328,6 +328,18 @@ table.data-table th, table.data-table td {
     text-overflow: ellipsis;
     text-wrap: wrap;
 }
+table.data-table input[type="text"],
+table.data-table input[type="number"],
+table.data-table input[type="date"]{
+    width: 100%;
+    max-width: 140px;
+    box-sizing: border-box;
+    padding: 4px 1px;
+    font-size: 0.9rem;
+    font-family: inherit;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+}
 .dokumenty-form{
     width: 100%;
     text-align: center;
