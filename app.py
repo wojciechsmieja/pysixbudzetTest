@@ -2,6 +2,7 @@ from flask import Flask, render_template, request
 from markupsafe import escape
 import pandas as pd
 import os
+from openpyxl import load_workbook
 
 app = Flask(__name__)
 EXCEL_PATH = 'budzet.xlsx'
@@ -31,6 +32,11 @@ def preprocess_data(df):
     df['Miesiąc'] = df['Data wystawienia'].dt.month_name().map(month_map)
     df['Kwota netto'] = pd.to_numeric(df['Kwota netto'], errors='coerce').fillna(0)
     df['Etykiety_proc'] = df['Etykiety'].str.strip().str.upper()
+    df['Nr dokumentu'] = df['Nr dokumentu'].astype(str).str.strip()
+    df['Lp.'] = df['Lp.'].astype(str).str.strip()
+    for col in ['Data wystawienia', 'Termin płatności']:
+        if col in df.columns:
+            df[col] = pd.to_datetime(df[col], errors='coerce').dt.strftime('%Y-%m-%d')
     return df
 
 def format_number(val):
@@ -109,7 +115,7 @@ def dashboard():
 def analiza():
     typ = request.args.get('typ', 'Przychody')
     if not os.path.exists(EXCEL_PATH):
-        return render_template('analiza.html', typ=typ, branches=[], branch='', months_order=[], suma_row_list=[], kontrahenci_sorted=[], pivot={}, sort_by='', sort_order='desc')
+        return render_template('analiza.html',  typ=typ, branches=[], branch='', months_order=[], suma_row_list=[], kontrahenci_sorted=[], pivot={}, sort_by='', sort_order='desc')
     try:
         df = pd.read_excel(EXCEL_PATH, sheet_name=typ)
         df = preprocess_data(df)
@@ -228,6 +234,137 @@ def wynagrodzenia():
         suma_wyplat=suma_wyplat,
         months_order=months_order_local
     )
+
+#dokumenty -> widok całej tabeli do edycji rekordów
+@app.route('/dokumenty', methods=['GET'])
+def dokumenty():
+    typ = request.args.get('typ', 'Przychody')
+    if not os.path.exists(EXCEL_PATH):
+        return render_template('dokumenty.html', rows=[], typ=typ, branch='', branches=[], error='Brak pliku Excel.')
+    
+
+    try:
+        df = pd.read_excel(EXCEL_PATH, sheet_name=typ)
+        df=preprocess_data(df)
+    except Exception as e:
+        return render_template('dokumenty.html', rows=[], typ=typ, branch='', branches=[], error=str(e))
+    
+    
+    unique_branches = df[['Etykiety', 'Etykiety_proc']].drop_duplicates()
+    branches =unique_branches['Etykiety'].tolist()
+    etykieta_map = dict(zip(unique_branches['Etykiety'], unique_branches['Etykiety_proc']))
+
+    branch_org = request.args.get('branch', branches[0] if branches else '')
+    branch_proc = etykieta_map.get(branch_org, branch_org)
+
+    filtered_df = df[df['Etykiety_proc'] == branch_proc] if branch_proc else df
+    filtered_df2 = filtered_df.drop(columns=['Etykiety_proc', 'Miesiąc'], errors='ignore')
+    rows = filtered_df2.to_dict(orient='records')
+
+    return render_template('dokumenty.html', rows=rows, typ=typ, branch=branch_org, branches=branches)
+
+    
+
+#route to handle save edited records back to the file
+@app.route('/zapisz', methods=['POST'])
+def zapisz():
+    #wczytanie wszystkich danych do dataframeow
+    all_sheets = pd.read_excel(EXCEL_PATH, sheet_name=None)
+    
+
+
+    kontrahent = request.form.get("kontrahent")
+    typ = request.form.get("typ")
+    branch = request.form.get("branch")
+    naglowki = request.form.getlist("naglowki[]")
+    wartosci = request.form.getlist("wartosci[]")
+    index = request.form.get("index")
+
+    try:
+        index = int(index)
+    except ValueError:
+        return "Błędny format indeksu", 400
+
+    print("Odebrano dane:")
+    print("kontrahent:", kontrahent)
+    print("typ:", typ)
+    print("branch:", branch)
+    print("naglowki:", naglowki)
+    print("wartosci:", wartosci)
+    print("index:", index)
+
+    if not kontrahent or not naglowki or not wartosci or not typ or not branch:
+        return "Brak wymaganych danych", 400
+    
+    if index is None:
+        return "brak indeksu do edycji:", 400
+
+    if len(naglowki) != len(wartosci):
+        return "Nieprawidłowa liczba miesięcy i wartości", 400
+
+
+    
+    if not os.path.exists(EXCEL_PATH):
+        return 'Error: no such file or directory', 500
+    
+    #df = pd.read_excel(EXCEL_PATH, sheet_name=typ)
+    df = all_sheets[typ]
+    df = preprocess_data(df)
+
+
+
+    typy_kolumn = df.dtypes.to_dict()
+
+    dane = {}
+    for naglowek, wartosc in zip(naglowki, wartosci):
+        if pd.api.types.is_numeric_dtype(typy_kolumn.get(naglowek)):
+            # liczba → konwertujemy na float (jeśli puste, to NaN)
+            try:
+                dane[naglowek] = float(wartosc.replace(",", ".").replace(" ", "")) if wartosc.strip() != "" else None
+            except ValueError:
+                dane[naglowek] = None
+        else:
+            dane[naglowek] = wartosc
+    
+    df['Etykiety_proc'] = df['Etykiety'].str.strip().str.upper()
+    branch_proc = branch.strip().upper()
+
+    #Updates rows for specific company and month
+    df['Lp.'] = pd.to_numeric(df['Lp.'], errors='coerce').astype('Int64')
+    idx = (
+        (df['Lp.'] == index)&
+        (df['Etykiety_proc'] == branch_proc) &
+        (df['Kontrahent'] == kontrahent) 
+          )
+    #check if any row can be updated
+    if idx.sum() == 0:
+        print("Dostępne Lp.:", df['Lp.'].unique())
+        print("Dostępne etykiety:", df['Etykiety_proc'].unique())
+        print("Dostępni kontrahenci:", df['Kontrahent'].unique())
+        return "Nie znaleziono rekordu do aktualizacji", 404
+
+
+    #replace row with new data
+    for kol, val in dane.items():
+        df.loc[idx, kol] = val
+
+    # Save the updated DataFrame back to the Excel file
+    df_to_save = df.drop(columns=["Etykiety_proc", "Miesiąc"], errors='ignore')
+    all_sheets[typ] = df_to_save
+
+    #for col in ['Data wystawienia', 'Termin płatności']:
+     #   if col in df_to_save.columns:
+      #      df_to_save[col] = pd.to_datetime(df_to_save[col], errors='coerce').dt.date
+
+    with pd.ExcelWriter(EXCEL_PATH, engine='openpyxl') as writer:
+        for sheet_name, sheet_df in all_sheets.items():
+            sheet_df.to_excel(writer, sheet_name=sheet_name, index =False)
+        
+        #df_to_save.to_excel(writer, sheet_name=typ, index=False)
+
+    return 'Zapisano', 200
+
+
 
 if __name__ == '__main__':
     import webbrowser

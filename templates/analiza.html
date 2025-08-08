@@ -28,20 +28,28 @@
     </form>
     <h2>Zestawienie dla gałęzi: {{ branch }}</h2>
     <div class="table-scroll">
-    <table><tbody>
-        <tr class="sumarow">
-            <td>SUMA</td>
-            {% for v in suma_row_list %}
-                <td>{{ v|format_number }}</td>
-            {% endfor %}
-        </tr>
+    <table>
+        <thead>
         <tr>
             <th><a href="?branch={{ branch }}&sort_by=Kontrahent&sort_order={% if sort_by=='Kontrahent' and sort_order=='desc' %}asc{% else %}desc{% endif %}" style="color:inherit;text-decoration:none">Kontrahent{% if sort_by=='Kontrahent' %} {% if sort_order=='desc' %}↓{% else %}↑{% endif %}{% endif %}</a></th>
             {% for m in months_order %}
                 <th><a href="?branch={{ branch }}&sort_by={{ m }}&sort_order={% if sort_by==m and sort_order=='desc' %}asc{% else %}desc{% endif %}" style="color:inherit;text-decoration:none">{{ m }}{% if sort_by==m %} {% if sort_order=='desc' %}↓{% else %}↑{% endif %}{% endif %}</a></th>
             {% endfor %}
             <th><a href="?branch={{ branch }}&sort_by=Suma roczna&sort_order={% if sort_by=='Suma roczna' and sort_order=='desc' %}asc{% else %}desc{% endif %}" style="color:inherit;text-decoration:none">Suma roczna{% if sort_by=='Suma roczna' %} {% if sort_order=='desc' %}↓{% else %}↑{% endif %}{% endif %}</a></th>
+            <!--<th>Akcje</th>-->
         </tr>
+        </thead>
+        
+        <tbody>
+        <tr class="sumarow">
+            <td>SUMA</td>
+            {% for v in suma_row_list %}
+                <td>{{ v|format_number }}</td>
+            {% endfor %}
+            <td></td>
+        </tr>
+        <!--naglowki kolumn-->
+
         {% if kontrahenci_sorted|length == 0 %}
             <tr><td colspan="{{ months_order|length + 2 }}" style="text-align:center;color:#888;font-size:1.2rem;padding:24px;">Brak danych dla wybranej gałęzi.</td></tr>
         {% else %}
@@ -52,11 +60,18 @@
                         <td>{{ pivot[kontrahent][m]|format_number }}</td>
                     {% endfor %}
                     <td>{{ pivot[kontrahent]['Suma roczna']|format_number }}</td>
+                    <!--<td><button class="edit-btn">Edit</button></td>-->
                 </tr>
             {% endfor %}
         {% endif %}
     </tbody></table>
     </div>
     {% include 'footer.html' %}
+
+
+    <input type="hidden" name="typ" value="{{typ}}">
+    <input type="hidden" name="branch" value="{{branch}}">
+    <script src="/static/logic/editrecord.js"></script>
+
 </body>
 </html>

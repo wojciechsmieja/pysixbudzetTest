@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Dokumenty</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/static/global.css">
+</head>
+<body>
+    {% include 'navbar.html' %}
+    <h1>Dokumenty - {{ typ }}</h1>
+    <form method="get" class="dokumenty-form">
+        <label>Typ:
+            <select name="typ" onchange="this.form.submit()">
+                <option value="Przychody" {% if typ == 'Przychody' %}selected{% endif %}>Przychody</option>
+                <option value="Wydatki" {% if typ == 'Wydatki' %}selected{% endif %}>Wydatki</option>
+            </select>
+        </label>
+        <label>Gałąź:
+            <select name="branch" onchange="this.form.submit()">
+                {% for b in branches %}
+                    <option value="{{ b }}" {% if b == branch %}selected{% endif %}>{{ b }}</option>
+                {% endfor %}
+            </select>
+        </label>
+    </form>
+
+    {% if rows|length == 0 %}
+        <p>Brak danych dla wybranej gałęzi.</p>
+    {% else %}
+        <table class="data-table">
+            <thead>
+                <tr>
+                    {% for col in rows[0].keys() %}
+                        <th>{{ col }}</th>
+                    {% endfor %}
+                    <th>Akcje</th>
+                </tr>
+                
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                    <tr data-index="{{row['Lp.']}}" data-kontrahent="{{row['Kontrahent']}}">
+                        {% for val in row.values() %}
+                            <td class="{{ 'numeric' if val is number else '' }}">{{ val }}</td>
+                        {% endfor %}
+                        <td><button class="edit-btn">Edit</button></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+    <input type="hidden" name="typ" value="{{typ}}">
+    <input type="hidden" name="branch" value="{{branch}}">
+
+
+    <script src="../static/logic/editrecord.js"></script>
+</body>
+</html>
