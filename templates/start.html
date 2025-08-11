@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Start Page</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='global.css')   }}">
+</head>
+<body>
+    <header>
+        <h1>Witaj na stronie</h1>
+        <p>To jest strona startowa Twojej aplikacji.</p>
+        <nav>   
+            <ul>
+                <button><a href="{{url_for('login')}}">Zaloguj się</a></button>
+            </ul>
+        </nav>
+    </header>
+    {% include 'footer.html'%}
+    <script src="static/logic/login.js"></script>
+</body>

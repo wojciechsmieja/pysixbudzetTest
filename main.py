@@ -9,7 +9,7 @@ def import_data(path):
         df_income = pd.read_excel(path, sheet_name='Przychody')
         df_expense = pd.read_excel(path, sheet_name='Wydatki')
     except Exception as e:
-        print(f'Błąd podczas wczytywania pliku: {e}')
+        print('Błąd podczas wczytywania pliku: {e}')
         return pd.DataFrame(), pd.DataFrame()
     print('Kolumny w arkuszu Przychody:', df_income.columns.tolist())
     print('Kolumny w arkuszu Wydatki:', df_expense.columns.tolist())

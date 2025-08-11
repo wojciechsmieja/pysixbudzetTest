@@ -1,4 +1,7 @@
 flask
 pandas
 openpyxl
-gunicorn
+flask_sqlalchemy
+python-dotenv
+mysql-connector-python
+bcrypt

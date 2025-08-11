@@ -1,10 +1,25 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, url_for, redirect, flash, session
+import bcrypt
 from markupsafe import escape
 import pandas as pd
 import os
 from openpyxl import load_workbook
+from config import Config
+from extensions import db
+from routes import bp as main_bp
+from models import User
+from dotenv import load_dotenv
 
 app = Flask(__name__)
+app.config.from_object(Config)
+db.init_app(app)
+#blueprints
+app.register_blueprint(main_bp)
+#tworzymy tabele
+with app.app_context():
+    db.create_all()
+load_dotenv()
+app.secret_key = os.environ.get('FLASK_SECRET_KEY')
 EXCEL_PATH = 'budzet.xlsx'
 
 months_order = ['Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec', 'Lipiec', 'Sierpień', 'Wrzesień', 'Październik', 'Listopad', 'Grudzień']
@@ -58,10 +73,35 @@ def jinja_format_number(val):
 
 @app.route('/', methods=['GET'])
 def home():
-    return analiza()
+    return render_template("start.html")
+
+@app.route('/login', methods=['GET','POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password'].encode('utf-8')#bcrypt musi miec bytes lol
+
+        user = User.query.filter_by(username=username).first()
+        if user:
+            hashed = user.password_hash.encode('utf-8') 
+            if bcrypt.checkpw(password, hashed):
+                #Logowanie udalo sie
+                session['user_id'] = user.id
+                session['username'] = user.username
+                session['role'] = user.role
+                return redirect(url_for('dashboard'))
+        else:
+            #logowanie nieudane
+            flash('Nieprawidłowa nazwa użytkownika lub hasło')
+            return redirect(url_for('login'))
+    #najpierw wyswietl formularz
+    return render_template("login.html")
 
 @app.route('/dashboard', methods=['GET'])
 def dashboard():
+    if 'user_id' not in session:
+        flash('Proszę się zalogować, aby uzyskać dostęp do panelu.')
+        return redirect(url_for('login'))
     typ = request.args.get('typ', 'Przychody')
     if not os.path.exists(EXCEL_PATH):
         return render_template('analiza.html', typ=typ, branches=[], branch='', months_order=[], suma_row_list=[], kontrahenci_sorted=[], pivot={}, sort_by='', sort_order='desc')

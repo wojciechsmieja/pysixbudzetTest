@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zaloguj</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='global.css') }}">
+    <body>
+        <header>
+            <h1>Logowanie</h1>
+        </header>
+        <main>
+            <form method="POST" action="/login" class="login-form">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username"></input>
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password"></input>
+                <button type="submit">Zaloguj</button>
+            </form> 
+        </main>
+        <section>
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    <ul class="flashes">
+                        {% for message in messages %}
+                            <li>{{ message }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            {% endwith %}
+        </section>
+    </body>
+</html>

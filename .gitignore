@@ -1,0 +1,29 @@
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Virtual environment
+venv/
+env/
+
+# Flask stuff
+instance/
+*.sqlite3
+
+# IDEs / editors
+.vscode/
+.idea/
+
+# System pliki
+.DS_Store
+Thumbs.db
+
+# Logi
+*.log
+
+# Secrets
+.env
+
+# Pytest cache
+.pytest_cache/
