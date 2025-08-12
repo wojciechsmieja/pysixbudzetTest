@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Zaloguj</title>
+        <link rel="stylesheet" href="{{ url_for('static', filename='start.css') }}">
+    </head>
+    <body>
+        <header>
+            <h1>Zarejestruj się</h1>
+        </header>
+        <main>
+            <form method="POST" action="/register" class="login-form">
+                <label for="username">Nazwa użytkownika</label>
+                <input type="text" id="username" name="username"></input>
+                <label for="password">Hasło</label>
+                <input type="password" id="password" name="password"></input>
+                <button type="submit">Zarejestruj się</button>
+            </form> 
+        </main>
+        <section class="sec_flashes">
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    <div class="flashes">
+                        {% for message in messages %}
+                            <p>{{ message }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+        </section>
+        {% include 'footer.html'%}  
+    </body>
+</html>

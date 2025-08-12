@@ -9,22 +9,34 @@
 <body>
     {% include 'navbar.html' %}
     <h1>Dokumenty - {{ typ }}</h1>
-    <form method="get" class="dokumenty-form">
-        <label>Typ:
-            <select name="typ" onchange="this.form.submit()">
-                <option value="Przychody" {% if typ == 'Przychody' %}selected{% endif %}>Przychody</option>
-                <option value="Wydatki" {% if typ == 'Wydatki' %}selected{% endif %}>Wydatki</option>
-            </select>
-        </label>
-        <label>Gałąź:
-            <select name="branch" onchange="this.form.submit()">
-                {% for b in branches %}
-                    <option value="{{ b }}" {% if b == branch %}selected{% endif %}>{{ b }}</option>
-                {% endfor %}
-            </select>
-        </label>
-    </form>
-
+    <div class="form-typ-dokumenty">
+        <form method="get" class="dokumenty-form">
+            <label>Typ:
+                <select name="typ" onchange="this.form.submit()">
+                    <option value="Przychody" {% if typ == 'Przychody' %}selected{% endif %}>Przychody</option>
+                    <option value="Wydatki" {% if typ == 'Wydatki' %}selected{% endif %}>Wydatki</option>
+                </select>
+            </label>        
+            <label>Gałąź:
+                <select name="branch" onchange="this.form.submit()">
+                    {% for b in branches %}
+                        <option value="{{ b }}" {% if b == branch %}selected{% endif %}>{{ b }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+        </form>
+        <form action="/importExcel" method="POST" enctype="multipart/form-data" class="excel-form">
+            <label for="file-upload" class="import-excel">
+                <svg width="18" height="18" viewBox="6 0 24 18" fill="none">
+                <path d="M12 4v12" stroke="#222" stroke-width="2" stroke-linecap="round"/>
+                <path d="M8 12l4 4 4-4" fill="#222"/>
+                <path d="M6 20h12" stroke="#222" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                Import .xlsx
+            </label>
+            <input id="file-upload" type="file" name="file" accept=".xlsx" style="display:none;" onchange="this.form.submit()">
+        </form>
+    </div>
     {% if rows|length == 0 %}
         <p>Brak danych dla wybranej gałęzi.</p>
     {% else %}

@@ -1,8 +1,11 @@
+from datetime import timedelta
 from flask import Flask, render_template, request, url_for, redirect, flash, session
+from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user 
 import bcrypt
 from markupsafe import escape
 import pandas as pd
 import os
+import tempfile
 from openpyxl import load_workbook
 from config import Config
 from extensions import db
@@ -10,8 +13,15 @@ from routes import bp as main_bp
 from models import User
 from dotenv import load_dotenv
 
+
+#Initialize app
 app = Flask(__name__)
 app.config.from_object(Config)
+#czasem po dłuższej bezczynności przy odswiezeniu wywalało mysql connection not available wiec dodaje to
+app.config['SQLALCHEMY_ENGINE_OPTIONS']={
+    "pool_pre_ping":True,
+    "pool_recycle":280
+}
 db.init_app(app)
 #blueprints
 app.register_blueprint(main_bp)
@@ -19,8 +29,13 @@ app.register_blueprint(main_bp)
 with app.app_context():
     db.create_all()
 load_dotenv()
-app.secret_key = os.environ.get('FLASK_SECRET_KEY')
+app.config['SECRET_KEY'] = os.environ.get('FLASK_SECRET_KEY')
+app.permanent_session_lifetime = timedelta(minutes=30)
 EXCEL_PATH = 'budzet.xlsx'
+
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view= 'login'
 
 months_order = ['Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec', 'Lipiec', 'Sierpień', 'Wrzesień', 'Październik', 'Listopad', 'Grudzień']
 month_map = {
@@ -47,8 +62,13 @@ def preprocess_data(df):
     df['Miesiąc'] = df['Data wystawienia'].dt.month_name().map(month_map)
     df['Kwota netto'] = pd.to_numeric(df['Kwota netto'], errors='coerce').fillna(0)
     df['Etykiety_proc'] = df['Etykiety'].str.strip().str.upper()
-    df['Nr dokumentu'] = df['Nr dokumentu'].astype(str).str.strip()
+    df['Nr dokumentu'] = df['Nr dokumentu'].astype(str).str.strip().str.upper().str.replace(' ','')
+    #df['Nr dokumentu'] = "".join(temp.split())
     df['Lp.'] = df['Lp.'].astype(str).str.strip()
+    if 'Kontrahent' in df.columns:
+        df['Kontrahent'] = df['Kontrahent'].astype(str).str.strip()
+    if 'Rodzaj' in df.columns:
+        df['Rodzaj'] = df['Rodzaj'].astype(str).str.strip()
     for col in ['Data wystawienia', 'Termin płatności']:
         if col in df.columns:
             df[col] = pd.to_datetime(df[col], errors='coerce').dt.strftime('%Y-%m-%d')
@@ -71,25 +91,41 @@ def jinja_format_number(val):
         return ''
     return format_number(val)
 
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
 @app.route('/', methods=['GET'])
 def home():
     return render_template("start.html")
 
 @app.route('/login', methods=['GET','POST'])
 def login():
+    if current_user.is_authenticated:
+        return redirect(url_for('dashboard'))
     if request.method == 'POST':
-        username = request.form['username']
+        username = request.form['username'].strip()
         password = request.form['password'].encode('utf-8')#bcrypt musi miec bytes lol
 
+        if not username or not password:
+            flash('Podaj nazwę użytkownika i hasło')
+            return redirect(url_for('login'))
         user = User.query.filter_by(username=username).first()
         if user:
             hashed = user.password_hash.encode('utf-8') 
             if bcrypt.checkpw(password, hashed):
+                login_user(user)
+                next_page =  request.args.get('next')
                 #Logowanie udalo sie
+                print("id uzytkownika: {user.id}")
                 session['user_id'] = user.id
                 session['username'] = user.username
                 session['role'] = user.role
-                return redirect(url_for('dashboard'))
+                return redirect(next_page or url_for('dashboard'))
+            else:
+                #logowanie nieudane
+                flash('Nieprawidłowa nazwa użytkownika lub hasło', 'error')
+                return redirect(url_for('login'))
         else:
             #logowanie nieudane
             flash('Nieprawidłowa nazwa użytkownika lub hasło')
@@ -97,11 +133,17 @@ def login():
     #najpierw wyswietl formularz
     return render_template("login.html")
 
+@app.route('/register', methods = ['GET','POST'])
+def register():
+    return render_template("register.html")
+@app.route('/logout')
+def logout():
+    session.clear() #usuwa sesje
+    return redirect(url_for('login'))
+
 @app.route('/dashboard', methods=['GET'])
+@login_required
 def dashboard():
-    if 'user_id' not in session:
-        flash('Proszę się zalogować, aby uzyskać dostęp do panelu.')
-        return redirect(url_for('login'))
     typ = request.args.get('typ', 'Przychody')
     if not os.path.exists(EXCEL_PATH):
         return render_template('analiza.html', typ=typ, branches=[], branch='', months_order=[], suma_row_list=[], kontrahenci_sorted=[], pivot={}, sort_by='', sort_order='desc')
@@ -152,6 +194,7 @@ def dashboard():
     return render_template('analiza.html', **html_args)
 
 @app.route('/analiza', methods=['GET'])
+@login_required
 def analiza():
     typ = request.args.get('typ', 'Przychody')
     if not os.path.exists(EXCEL_PATH):
@@ -203,6 +246,7 @@ def analiza():
     return render_template('analiza.html', **html_args)
 
 @app.route('/podsumowanie', methods=['GET'])
+@login_required
 def podsumowanie():
     if not os.path.exists(EXCEL_PATH):
         return render_template('podsumowanie.html', summary_income=[], summary_expense=[])
@@ -245,6 +289,7 @@ def podsumowanie():
     )
 
 @app.route('/wynagrodzenia', methods=['GET'])
+@login_required
 def wynagrodzenia():
     # Zawsze używaj arkusza 'Wydatki', ignoruj parametr 'typ'
     if not os.path.exists(EXCEL_PATH):
@@ -277,6 +322,7 @@ def wynagrodzenia():
 
 #dokumenty -> widok całej tabeli do edycji rekordów
 @app.route('/dokumenty', methods=['GET'])
+@login_required
 def dokumenty():
     typ = request.args.get('typ', 'Przychody')
     if not os.path.exists(EXCEL_PATH):
@@ -303,15 +349,84 @@ def dokumenty():
 
     return render_template('dokumenty.html', rows=rows, typ=typ, branch=branch_org, branches=branches)
 
-    
+@app.route('/importExcel', methods = ['POST'])
+def importExcel():
+    file = request.files.get('file')
+    if not file:
+        flash("Nie wybrano pliku","error")
+        return redirect(url_for('dokumenty'))
+    #dodać if-a sprawdzajacego typ pliku -> aby byl .xlsx
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp:
+        file.save(tmp.name)
+        newPath = tmp.name
+
+    if not os.path.exists(EXCEL_PATH) or not newPath:
+        flash("Nie podano ścieżki", 'error')
+        return redirect(url_for('dokumenty'))
+    try:
+        oldDfIncome = pd.read_excel(EXCEL_PATH, sheet_name='Przychody')
+        oldDfIncome = preprocess_data(oldDfIncome)
+
+        oldDfExpense = pd.read_excel(EXCEL_PATH, sheet_name='Wydatki')
+        oldDfExpense = preprocess_data(oldDfExpense)
+        
+        newDfIncome = pd.read_excel(newPath, 'Przychody')
+        newDfIncome = preprocess_data(newDfIncome)
+        
+        newDfExpense = pd.read_excel(newPath, 'Wydatki')
+        newDfExpense = preprocess_data(newDfExpense)
+        
+    except Exception as e:
+        flash(f"Error: {e}, nie udał się import pliku.")
+        return redirect(url_for('dokumenty'))
+    #łączenie sheetu przychody
+    oldDfIncome = merge_data(oldDfIncome,newDfIncome, keys=['Nr dokumentu','Kontrahent','Rodzaj','Etykiety'])
+    #lączenie sheetu wydatki
+    oldDfExpense = merge_data(oldDfExpense,newDfExpense, keys=['Nr dokumentu','Kontrahent','Etykiety'])
+    #zapis z powrotem do starego pliku
+    with pd.ExcelWriter(EXCEL_PATH) as writer:
+        oldDfIncome.to_excel(writer, sheet_name='Przychody', float_format="%.2f", index=False)
+        oldDfExpense.to_excel(writer, sheet_name='Wydatki',float_format="%.2f",index=False)
+    return redirect(url_for('dokumenty'))
+
+def merge_data(old_df, new_df, keys):
+    # normalizacja kluczy aby były takie same
+    for k in keys:
+        old_df[k] = old_df[k].astype(str).str.strip().str.upper()
+        new_df[k] = new_df[k].astype(str).str.strip().str.upper()
+    #kopia starego dataframe
+    merged_df = old_df.copy()
+
+    for _, new_row in new_df.iterrows():
+        #szukamy w starym pliku wiersza o takich samych kluczach
+        mask = (merged_df[keys[0]] == new_row[keys[0]]) & (merged_df[keys[1]] == new_row[keys[1]]) & (merged_df[keys[2]] == new_row[keys[2]])
+        if len(keys) == 4:
+            mask &= (merged_df[keys[3]] == new_row[keys[3]])
+        
+        if mask.any():
+            #Aktualizacja istniejącego wiersza
+            idx = merged_df[mask].index[0]
+            for col in merged_df.columns:
+                if col != 'Lp.':
+                    merged_df.at[idx, col] = new_row[col]
+        else:
+            #Dodanie nowego wierszaz nowym Lp.
+            merged_df['Lp.'] = pd.to_numeric(merged_df['Lp.'], errors="coerce").fillna(0).astype(int)
+            new_lp = merged_df['Lp.'].max() + 1 if not merged_df.empty else 1
+            new_row_dict = new_row.to_dict()
+            new_row_dict['Lp.'] = new_lp
+            merged_df = pd.concat([merged_df, pd.DataFrame([new_row_dict])], ignore_index=True)
+
+    return merged_df
+                
 
 #route to handle save edited records back to the file
 @app.route('/zapisz', methods=['POST'])
+@login_required
 def zapisz():
     #wczytanie wszystkich danych do dataframeow
     all_sheets = pd.read_excel(EXCEL_PATH, sheet_name=None)
-    
-
 
     kontrahent = request.form.get("kontrahent")
     typ = request.form.get("typ")

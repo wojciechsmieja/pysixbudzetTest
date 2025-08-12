@@ -87,7 +87,7 @@ th, td {
     border-bottom: 1px solid #e3e7ee;
     overflow: hidden;
     text-overflow: ellipsis;
-    transition: background 0.2s, box-shadow 0.2s;
+    transition: 0.2s, box-shadow 0.2s;
 }
 th {
     background: #f4f6fa;
@@ -157,18 +157,26 @@ footer {
     z-index: 10;
     overflow: visible;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    justify-content: center;
     align-items: center;
     border-bottom: none;
+
+}
+.navbar-spacer{
+    display: none;
 }
 .navbar-inner {
+    position:absolute;
+    left: 50%;
+    transform: translate(-50%);
     display: flex;
+    flex-direction: row;
     justify-content: center;
     align-items: center;
     gap: 32px;
-    width: 100%;
-    max-width: 700px;
-    margin: 0 auto;
+
+
     position: relative;
     z-index: 2;
 }
@@ -190,14 +198,14 @@ footer {
     position: relative;
     overflow: hidden;
 }
-.main-navbar .nav-btn:hover, .main-navbar .nav-btn:focus {
+.main-navbar .nav-btn:hover, .main-navbar .nav-btn:focus, .import-excel:hover, .import-excel:focus {
     background: #2563eb;
     color: #fff;
     box-shadow: 0 2px 8px #2563eb99;
     transform: translateY(-1px) scale(1.03);
     outline: none;
 }
-.main-navbar .nav-btn:focus {
+.main-navbar .nav-btn:focus, .import-excel:focus {
     outline: 2px solid #2563eb;
     outline-offset: 2px;
     transition: outline 0.2s;
@@ -213,6 +221,12 @@ footer {
 .main-navbar .nav-btn:hover svg {
     opacity: 1;
     filter: drop-shadow(0 0 8px #bfc8d6);
+}
+.logout-section{
+    display: flex;
+    margin-left:auto;
+    margin-right:10px;
+    align-items: center;
 }
 .navbar-glow {
     display: none;
@@ -340,11 +354,41 @@ table.data-table input[type="date"]{
     border: 1px solid #ddd;
     border-radius: 8px;
 }
-.dokumenty-form{
+.form-typ-dokumenty{
     width: 100%;
+    padding:0;
+    margin:0;
+    display:flex;
+    flex-direction: row;
+    align-items: center;
+    position:relative;
+    z-index: 2;
+    margin-bottom: 15px;
+}
+
+.dokumenty-form{
+    position:absolute;
+    left: 50%;
+    transform: translate(-50%);
     text-align: center;
-    margin:auto;
     padding: 16px 0;
+    
+}
+.import-excel{
+    background-color: #007bff;
+    color: white;
+    padding:10px 20px;
+    border:none;
+    border-radius:5px;
+    cursor: pointer;
+    font-size:16px;
+    margin:auto;
+    margin-right: 10px;
+    white-space:nowrap;
+    text-decoration: none;
+}
+.import-excel svg{
+    color:#ddd;
 }
 .dokumenty-form input[type="text"],
 .dokumenty-form select {
@@ -357,6 +401,8 @@ table.data-table input[type="date"]{
     box-sizing: border-box;
     margin-right: 10px;
 }
+
+
 /* --- RESPONSYWNOŚĆ TABELI I DASHBOARDU --- */
 @media (max-width: 900px) {
     .table-scroll {

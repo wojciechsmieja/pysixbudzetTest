@@ -4,18 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Start Page</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='global.css')   }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='start.css')   }}">
 </head>
 <body>
     <header>
-        <h1>Witaj na stronie</h1>
-        <p>To jest strona startowa Twojej aplikacji.</p>
-        <nav>   
-            <ul>
-                <button><a href="{{url_for('login')}}">Zaloguj się</a></button>
-            </ul>
-        </nav>
+        <h1 id="start-h1">Witaj na stronie</h1>
     </header>
+    <main>      
+        <nav class="starter-nav">   
+            <p>To jest strona startowa aplikacji do budżetu.</p>
+            <a href="{{url_for('login')}}">Zaloguj się</a>
+      </nav>
+    </main>  
     {% include 'footer.html'%}
-    <script src="static/logic/login.js"></script>
+
 </body>
