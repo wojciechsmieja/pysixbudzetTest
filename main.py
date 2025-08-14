@@ -1,3 +1,4 @@
+'''
 import pandas as pd
 
 # Ścieżka do pliku Excel (zmień na własną)
@@ -71,3 +72,4 @@ if __name__ == "__main__":
     df_expense = preprocess_data(df_expense)
     generate_dashboard(df_income, 'Przychody')
     generate_dashboard(df_expense, 'Wydatki')
+'''

@@ -1,0 +1,225 @@
+input[type="text"]{
+    max-width: fit-content;
+}
+table .edit-btn,
+table .save-btn,
+table .cancel-btn{
+    font-weight: bold;
+    padding:4px;
+    margin:10px;
+    border:none;
+    cursor:pointer;
+    display:inline-flex;
+    justify-content:center;
+    text-align: center;
+    min-width: 50px;
+}
+table .edit-btn{
+    background-color: #e3e7ee;
+}
+table .save-btn{
+    background-color: #4caf50;
+}
+table .cancel-btn{
+    background-color: #f44336;
+}
+th, td{
+    text-align:center;
+}
+table td input[type="text"]{
+    width:100%;
+    max-width:140px;
+    box-sizing: border-box;
+    padding:4px 1px;
+    font-size: 0.9rem;
+    font-family: inherit;
+}
+table td:last-child {
+    text-wrap: wrap;
+}
+/*Part of documents subpage*/
+table.data-table {
+    display: table;
+    table-layout: fixed;
+    border-spacing: 0;
+    width: 100%;
+    border-collapse: collapse;
+    margin: auto;
+    font-size: 1rem;
+    color: #222;
+    max-width: 95%;
+}
+table.data-table th, table.data-table td {
+    padding: 10px 8px;
+    border: 1px solid #ddd;
+    text-align: left;
+    border-bottom: 1px solid #e3e7ee;
+    white-space: nowrap;    
+    text-overflow: ellipsis;
+    text-wrap: wrap;
+}
+table.data-table input[type="text"],
+table.data-table input[type="number"],
+table.data-table input[type="date"]{
+    width: 100%;
+    max-width: 140px;
+    box-sizing: border-box;
+    padding: 4px 1px;
+    font-size: 0.9rem;
+    font-family: inherit;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+}
+.form-typ-dokumenty{
+    width: 100%;
+    padding:0;
+    margin:0;
+    display:flex;
+    flex-direction: column;
+    align-items: center;
+    position:relative;
+    z-index: 2;
+    margin-bottom: 15px;
+}
+
+.dokumenty-branch{
+    width:100%;
+    display: flex;
+    justify-content: center;
+    transform: none;
+    margin: 0 auto;
+    position: static;
+    padding: 16px 0;
+    
+}
+.import-excel{
+    background-color: #007bff;
+    color: white;
+    padding:10px 20px;
+    border:none;
+    border-radius:5px;
+    cursor: pointer;
+    font-size:16px;
+    margin:auto;
+    margin-left: 10px;
+    margin-right: 10px;
+    white-space:nowrap;
+    text-decoration: none;
+}
+.dokumenty-import-add{
+    width:100%;
+    display: flex;
+    justify-content: center;
+    
+}
+.dokumenty-form input[type="text"],
+.dokumenty-form select {
+    padding: 8px;
+    font-size: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    width: 200px;
+    max-width: 100%;
+    box-sizing: border-box;
+    margin-right: 10px;
+}
+/* --- ADD RECORD FORM STYLES --- */
+.add-record-form-expense, .add-record-form-income {
+    display: none; /* Hidden by default, must be shown by JS by adding .active class */
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90vw;
+    max-width: 800px;
+    background: #fff;
+    padding: 24px 32px;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    z-index: 100;
+}
+
+.add-record-form-expense.active, .add-record-form-income.active {
+    display: block;
+}
+
+.add-record-form-expense form, .add-record-form-income form {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 16px 24px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.add-record-form-expense p, .add-record-form-income p {
+    grid-column: 1 / -1;
+    text-align: center;
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0 0 16px 0;
+}
+
+.add-record-form-expense label, .add-record-form-income label {
+    margin-bottom: 6px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #333;
+}
+
+.add-record-form-expense input, .add-record-form-income input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 1rem;
+    box-sizing: border-box;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.add-record-form-expense input:focus, .add-record-form-income input:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+}
+
+.submit-add-expense-record-btn, .submit-add-income-record-btn {
+    grid-column: 1 / -1;
+    justify-self: center;
+    width: 50%;
+    max-width: 200px;
+    margin-top: 16px;
+    padding: 12px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    background-color: #2563eb;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.submit-add-expense-record-btn:hover,.submit-add-income-record-btn:hover {
+    background-color: #1d4ed8;
+}
+.cancel-add-record-btn,.cancel-add-record-btn:hover,.cancel-add-record-btn:focus{
+    grid-column: 1 / -1;
+    justify-self: center;
+    width: 50%;
+    max-width: 200px;
+    margin-top: 16px;
+    padding: 12px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    background-color: #eb2525;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.2s;
+} 

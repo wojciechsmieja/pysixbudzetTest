@@ -5,37 +5,147 @@
     <title>Dokumenty</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="{{ url_for('static', filename='global.css', v='2')   }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='dokumenty.css')}}">
 </head>
 <body>
+    <div class="add-record-form-income">
+        <form method="POST" action="/addRecord">
+            <p>Dodaj Przychód:</p>
+            <div class="form-group">
+                <label for="Nr dokumentu">Nr dokumentu</label>
+                <input type="text" name="Nr dokumentu" value="">
+            </div>
+            <div class="form-group">
+                <label for="Kontrahent">Kontrahent</label>
+                <input type="text" name="Kontrahent" value="">
+            </div>
+            <div class="form-group">
+                <label for="Rodzaj">Rodzaj</label>
+                <input type="text" name="Rodzaj" value="FAKTURA">
+            </div>
+            <div class="form-group">
+                <label for="Data wystawienia">Data wystawienia</label>
+                <input type="date" name="Data wystawienia" value="">
+            </div>
+            <div class="form-group">
+                <label for="Termin płatności">Termin płatności</label>
+                <input type="date" name="Termin płatności" value="">
+            </div>
+            <div class="form-group">
+                <label for="Zapłacono">Zapłacono</label>
+                <input type="number" step="0.01" name="Zapłacono" min="0" value="0">
+            </div>
+            <div class="form-group">
+                <label for="Pozostało">Pozostało</label>
+                <input type="number" step="0.01" name="Pozostało" min="0" value="0">
+            </div>
+            <div class="form-group">
+                <label for="Razem">Razem</label>
+                <input type="number" step="0.01" name="Razem" min="0" value="0">
+            </div>
+            <div class="form-group">
+                <label for="Kwota netto">Kwota netto</label>
+                <input type="number" step="0.01" name="Kwota netto" min="0" value="0">
+            </div>
+            <div class="form-group">
+                <label for="Metoda">Metoda płatności</label>
+                <input type="text" name="Metoda" value="przelew">
+            </div>
+            <div class="form-group">
+                <label for="Etykiety">Etykiety</label>
+                <input type="text" name="Etykiety" value="">
+            </div>
+            <button type="button" class="cancel-add-record-btn">Anuluj</button>
+            <button type="submit" class="submit-add-income-record-btn">Dodaj</button>
+        </form>
+    </div>
+    <div class="add-record-form-expense">
+        <form method="POST" action="/addRecord">
+            <p>Dodaj Wydatek:</p>
+            <div class="form-group">
+                <label for="Nr dokumentu">Nr dokumentu</label>
+                <input type="text" name="Nr dokumentu" value="">
+            </div>
+            <div class="form-group">
+                <label for="Kontrahent">Kontrahent</label>
+                <input type="text" name="Kontrahent" value="">
+            </div>
+            <div class="form-group">
+                <label for="Data wystawienia">Data wystawienia</label>
+                <input type="date" name="Data wystawienia" value="">
+            </div>
+            <div class="form-group">
+                <label for="Termin płatności">Termin płatności</label>
+                <input type="date" name="Termin płatności" value="">
+            </div>
+            <div class="form-group">
+                <label for="Zapłacono">Zapłacono</label>
+                <input type="number" step="0.01" min="0" name="Zapłacono" value="0">
+            </div>
+            <div class="form-group">
+                <label for="Pozostało">Pozostało</label>
+                <input type="number" step="0.01" min="0" name="Pozostało" value="0">
+            </div>
+            <div class="form-group">
+                <label for="Razem">Razem</label>
+                <input type="number" step="0.01" min="0"  name="Razem" value="0">
+            </div>
+            <div class="form-group">
+                <label for="Kwota netto">Kwota netto</label>
+                <input type="number" step="0.01" min="0" name="Kwota netto" value="0">
+            </div>
+            <div class="form-group">
+                <label for="Kwota VAT">Kwota VAT</label>
+                <input type="number" step="0.01" min="0" name="Kwota VAT" value="0">
+            </div>
+            <div class="form-group">
+                <label for="Etykiety">Etykiety</label>
+                <input type="text" name="Etykiety" value="">
+            </div>
+            <button type="button" class="cancel-add-record-btn">Anuluj</button>
+            <button type="submit" class="submit-add-expense-record-btn">Dodaj</button>
+        </form>
+    </div>
     {% include 'navbar.html' %}
     <h1>Dokumenty - {{ typ }}</h1>
     <div class="form-typ-dokumenty">
-        <form method="get" class="dokumenty-form">
-            <label>Typ:
-                <select name="typ" onchange="this.form.submit()">
-                    <option value="Przychody" {% if typ == 'Przychody' %}selected{% endif %}>Przychody</option>
-                    <option value="Wydatki" {% if typ == 'Wydatki' %}selected{% endif %}>Wydatki</option>
-                </select>
-            </label>        
-            <label>Gałąź:
-                <select name="branch" onchange="this.form.submit()">
-                    {% for b in branches %}
-                        <option value="{{ b }}" {% if b == branch %}selected{% endif %}>{{ b }}</option>
-                    {% endfor %}
-                </select>
-            </label>
-        </form>
-        <form action="/importExcel" method="POST" enctype="multipart/form-data" class="excel-form">
-            <label for="file-upload" class="import-excel">
-                <svg width="18" height="18" viewBox="6 0 24 18" fill="none">
-                <path d="M12 4v12" stroke="#222" stroke-width="2" stroke-linecap="round"/>
-                <path d="M8 12l4 4 4-4" fill="#222"/>
-                <path d="M6 20h12" stroke="#222" stroke-width="2" stroke-linecap="round"/>
+        <div class="dokumenty-branch">
+            <form method="get" class="dokumenty-form">
+                <label>Typ:
+                    <select name="typ" onchange="this.form.submit()">
+                        <option value="Przychody" {% if typ == 'Przychody' %}selected{% endif %}>Przychody</option>
+                        <option value="Wydatki" {% if typ == 'Wydatki' %}selected{% endif %}>Wydatki</option>
+                    </select>
+                </label>        
+                <label>Gałąź:
+                    <select name="branch" onchange="this.form.submit()">
+                        {% for b in branches %}
+                            <option value="{{ b }}" {% if b == branch %}selected{% endif %}>{{ b }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+            </form>
+        </div>
+        <div class="dokumenty-import-add">
+            <form action="/importExcel" method="POST" enctype="multipart/form-data" class="import-excel">
+                <label for="file-upload" class="import-excel-label">
+                    <svg width="18" height="18" viewBox="6 0 24 18" fill="none">
+                    <path d="M12 4v12" stroke="#222" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M8 12l4 4 4-4" fill="#222"/>
+                    <path d="M6 20h12" stroke="#222" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    Import .xlsx
+                </label>
+                <input id="file-upload" type="file" name="file" accept=".xlsx" style="display:none;" onchange="this.form.submit()">
+            </form>
+            <button class="add-record-btn, import-excel" id="add-record" onclick="openForm()">
+                <svg width="22" height="18" viewBox="6 0 24 18" fill="none">
+                  <path d="M6 2h9l5 5v15H6V2z" fill="none" stroke="#222" stroke-width="1.5"/>
+                  <path d="M14 2v6h6" fill="none" stroke="#222" stroke-width="1.5"/>
+                  <path d="M22 12l-6-3v2h-6v2h6v2l6-3z" fill="#222"/>
                 </svg>
-                Import .xlsx
-            </label>
-            <input id="file-upload" type="file" name="file" accept=".xlsx" style="display:none;" onchange="this.form.submit()">
-        </form>
+                Dodaj dane</button>
+        </div>
     </div>
     {% if rows|length == 0 %}
         <p>Brak danych dla wybranej gałęzi.</p>

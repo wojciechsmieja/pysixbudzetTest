@@ -1,4 +1,4 @@
-from datetime import timedelta
+
 from flask import Flask, render_template, request, url_for, redirect, flash, session
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user 
 import bcrypt
@@ -9,33 +9,33 @@ import tempfile
 from openpyxl import load_workbook
 from config import Config
 from extensions import db
-from routes import bp as main_bp
+#from routes import bp as main_bp
 from models import User
 from dotenv import load_dotenv
+
 
 
 #Initialize app
 app = Flask(__name__)
 app.config.from_object(Config)
-#czasem po dłuższej bezczynności przy odswiezeniu wywalało mysql connection not available wiec dodaje to
-app.config['SQLALCHEMY_ENGINE_OPTIONS']={
-    "pool_pre_ping":True,
-    "pool_recycle":280
-}
 db.init_app(app)
-#blueprints
-app.register_blueprint(main_bp)
 #tworzymy tabele
 with app.app_context():
     db.create_all()
-load_dotenv()
-app.config['SECRET_KEY'] = os.environ.get('FLASK_SECRET_KEY')
-app.permanent_session_lifetime = timedelta(minutes=30)
+
+app.secret_key = app.config['SECRET_KEY']
+app.permanent_session_lifetime = app.config['PERMANENT_SESSION_LIFETIME']
 EXCEL_PATH = 'budzet.xlsx'
 
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view= 'login'
+
+SHEETS_CACHE = {
+    sheet: pd.read_excel(EXCEL_PATH, sheet_name=sheet)
+    for sheet in ["Przychody", "Wydatki"]
+}
+
 
 months_order = ['Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec', 'Lipiec', 'Sierpień', 'Wrzesień', 'Październik', 'Listopad', 'Grudzień']
 month_map = {
@@ -52,26 +52,55 @@ month_map = {
     'November': 'Listopad',
     'December': 'Grudzień'
 }
-
+#oba sheety maja: lp, nr dokumentu, kontrahent, data wystawienia, termin platnosci, zaplacono, pozostalo, razem, kwota netto, etykiety
+#sheet przychody ma: rodzaj, metoda
+#sheet wydatki ma: kwota Vat
 def preprocess_data(df):
+    #check reqires columns
     required_cols = ['Data wystawienia', 'Kwota netto', 'Etykiety']
     for col in required_cols:
         if col not in df.columns:
             raise ValueError(f"Brak wymaganej kolumny: {col}")
-    df['Data wystawienia'] = pd.to_datetime(df['Data wystawienia'], errors='coerce')
-    df['Miesiąc'] = df['Data wystawienia'].dt.month_name().map(month_map)
-    df['Kwota netto'] = pd.to_numeric(df['Kwota netto'], errors='coerce').fillna(0)
-    df['Etykiety_proc'] = df['Etykiety'].str.strip().str.upper()
-    df['Nr dokumentu'] = df['Nr dokumentu'].astype(str).str.strip().str.upper().str.replace(' ','')
-    #df['Nr dokumentu'] = "".join(temp.split())
-    df['Lp.'] = df['Lp.'].astype(str).str.strip()
-    if 'Kontrahent' in df.columns:
+    #Format input values
+    if 'Lp.' in df.columns:
+        df['Lp.'] = df['Lp.'].astype(str).str.strip()
+    if 'Nr dokumentu' in df.columns:
+        df['Nr dokumentu'] = df['Nr dokumentu'].astype(str).str.strip().str.upper().str.replace(' ','')
+    if 'Kontrahent' in df.columns:    
         df['Kontrahent'] = df['Kontrahent'].astype(str).str.strip()
     if 'Rodzaj' in df.columns:
         df['Rodzaj'] = df['Rodzaj'].astype(str).str.strip()
+    if 'Metoda' in df.columns:
+        df['Metoda'] = df['Metoda'].astype(str).str.strip().fillna('')
+        
+    #Date conversion
+    if 'Data wystawienia' in df.columns:
+        df['Data wystawienia'] = pd.to_datetime(df['Data wystawienia'], errors='coerce')
+    if 'Termin płatności' in df.columns:
+        df['Termin płatności'] = pd.to_datetime(df['Termin płatności'], errors='coerce')
+
+    #Additional column
+    if 'Data wystawienia' in df.columns:
+        df['Miesiąc'] = df['Data wystawienia'].dt.month_name().map(month_map)
+
+     #Number converion   
+    for col in ['Zapłacono','Pozostało','Razem','Kwota netto']:
+        if col in df.columns:
+            df['Zapłacono'] = pd.to_numeric(df['Zapłacono'], errors="coerce").fillna(0)
+            df['Pozostało'] = pd.to_numeric(df['Pozostało'], errors="coerce").fillna(0)
+            df['Razem'] = pd.to_numeric(df['Razem'], errors="coerce").fillna(0)
+            df['Kwota netto'] = pd.to_numeric(df['Kwota netto'], errors='coerce').fillna(0)
+
+    #Labels
+    if 'Etykiety' in df.columns:
+        df['Etykiety'] = df['Etykiety'].str.strip().str.upper()
+        df['Etykiety_proc'] = df['Etykiety'].str.strip().str.upper()
+
+    #string version of dates
     for col in ['Data wystawienia', 'Termin płatności']:
         if col in df.columns:
             df[col] = pd.to_datetime(df[col], errors='coerce').dt.strftime('%Y-%m-%d')
+            
     return df
 
 def format_number(val):
@@ -87,7 +116,7 @@ def format_number(val):
 
 @app.template_filter('format_number')
 def jinja_format_number(val):
-    if val == 0:
+    if val == 0 or val==0.0:
         return ''
     return format_number(val)
 
@@ -148,7 +177,7 @@ def dashboard():
     if not os.path.exists(EXCEL_PATH):
         return render_template('analiza.html', typ=typ, branches=[], branch='', months_order=[], suma_row_list=[], kontrahenci_sorted=[], pivot={}, sort_by='', sort_order='desc')
     try:
-        df = pd.read_excel(EXCEL_PATH, sheet_name=typ)
+        df = SHEETS_CACHE[typ].copy()
         df = preprocess_data(df)
     except Exception as e:
         return render_template('analiza.html', typ=typ, branches=[], branch='', months_order=[], suma_row_list=[], kontrahenci_sorted=[], pivot={}, sort_by='', sort_order='desc', error=str(e))
@@ -200,13 +229,15 @@ def analiza():
     if not os.path.exists(EXCEL_PATH):
         return render_template('analiza.html',  typ=typ, branches=[], branch='', months_order=[], suma_row_list=[], kontrahenci_sorted=[], pivot={}, sort_by='', sort_order='desc')
     try:
-        df = pd.read_excel(EXCEL_PATH, sheet_name=typ)
+        df = SHEETS_CACHE[typ].copy()
         df = preprocess_data(df)
     except Exception as e:
         return render_template('analiza.html', typ=typ, branches=[], branch='', months_order=[], suma_row_list=[], kontrahenci_sorted=[], pivot={}, sort_by='', sort_order='desc', error=str(e))
     if df.empty or 'Etykiety' not in df.columns:
         return render_template('analiza.html', typ=typ, branches=[], branch='', months_order=[], suma_row_list=[], kontrahenci_sorted=[], pivot={}, sort_by='', sort_order='desc', error='Brak danych w pliku budżetu!')
     unique_branches = df[['Etykiety', 'Etykiety_proc']].drop_duplicates()
+    print(df[['Etykiety','Etykiety_proc']])
+    print(unique_branches)
     branches = unique_branches['Etykiety'].tolist()
     etykieta_map = dict(zip(unique_branches['Etykiety'], unique_branches['Etykiety_proc']))
     branch_org = request.args.get('branch', branches[0] if branches else '')
@@ -251,8 +282,8 @@ def podsumowanie():
     if not os.path.exists(EXCEL_PATH):
         return render_template('podsumowanie.html', summary_income=[], summary_expense=[])
     try:
-        df_income = pd.read_excel(EXCEL_PATH, sheet_name='Przychody')
-        df_expense = pd.read_excel(EXCEL_PATH, sheet_name='Wydatki')
+        df_income = SHEETS_CACHE['Przychody'].copy()
+        df_expense = SHEETS_CACHE['Wydatki'].copy()
         df_income = preprocess_data(df_income)
         df_expense = preprocess_data(df_expense)
     except Exception as e:
@@ -295,7 +326,7 @@ def wynagrodzenia():
     if not os.path.exists(EXCEL_PATH):
         return render_template('wynagrodzenia.html', wynagrodzenia_podzial={}, suma_wyplat=0)
     try:
-        df_wyd = pd.read_excel(EXCEL_PATH, sheet_name='Wydatki')
+        df_wyd = SHEETS_CACHE['Wydatki'].copy()
     except Exception as e:
         return render_template('wynagrodzenia.html', wynagrodzenia_podzial={}, suma_wyplat=0, error=str(e))
     if df_wyd.empty or 'Etykiety' not in df_wyd.columns or 'Kwota netto' not in df_wyd.columns or 'Kontrahent' not in df_wyd.columns:
@@ -328,28 +359,33 @@ def dokumenty():
     if not os.path.exists(EXCEL_PATH):
         return render_template('dokumenty.html', rows=[], typ=typ, branch='', branches=[], error='Brak pliku Excel.')
     
-
     try:
         df = pd.read_excel(EXCEL_PATH, sheet_name=typ)
         df=preprocess_data(df)
     except Exception as e:
         return render_template('dokumenty.html', rows=[], typ=typ, branch='', branches=[], error=str(e))
     
-    
     unique_branches = df[['Etykiety', 'Etykiety_proc']].drop_duplicates()
-    branches =unique_branches['Etykiety'].tolist()
+    branches = unique_branches['Etykiety'].tolist()
     etykieta_map = dict(zip(unique_branches['Etykiety'], unique_branches['Etykiety_proc']))
 
     branch_org = request.args.get('branch', branches[0] if branches else '')
     branch_proc = etykieta_map.get(branch_org, branch_org)
 
     filtered_df = df[df['Etykiety_proc'] == branch_proc] if branch_proc else df
-    filtered_df2 = filtered_df.drop(columns=['Etykiety_proc', 'Miesiąc'], errors='ignore')
+    
+    # Poprawiona lista kolumn do usunięcia
+    cols_to_drop = ['Etykiety_proc', 'Miesiąc', 'Zaplacono', 'Pozostalo']
+    # Upewnij się, że usuwamy tylko istniejące kolumny
+    existing_cols_to_drop = [col for col in cols_to_drop if col in filtered_df.columns]
+    filtered_df2 = filtered_df.drop(columns=existing_cols_to_drop, errors='ignore')
+    
     rows = filtered_df2.to_dict(orient='records')
 
     return render_template('dokumenty.html', rows=rows, typ=typ, branch=branch_org, branches=branches)
 
 @app.route('/importExcel', methods = ['POST'])
+@login_required
 def importExcel():
     file = request.files.get('file')
     if not file:
@@ -365,10 +401,10 @@ def importExcel():
         flash("Nie podano ścieżki", 'error')
         return redirect(url_for('dokumenty'))
     try:
-        oldDfIncome = pd.read_excel(EXCEL_PATH, sheet_name='Przychody')
+        oldDfIncome = SHEETS_CACHE['Przychody']
         oldDfIncome = preprocess_data(oldDfIncome)
 
-        oldDfExpense = pd.read_excel(EXCEL_PATH, sheet_name='Wydatki')
+        oldDfExpense = SHEETS_CACHE['Wydatki']
         oldDfExpense = preprocess_data(oldDfExpense)
         
         newDfIncome = pd.read_excel(newPath, 'Przychody')
@@ -384,6 +420,9 @@ def importExcel():
     oldDfIncome = merge_data(oldDfIncome,newDfIncome, keys=['Nr dokumentu','Kontrahent','Rodzaj','Etykiety'])
     #lączenie sheetu wydatki
     oldDfExpense = merge_data(oldDfExpense,newDfExpense, keys=['Nr dokumentu','Kontrahent','Etykiety'])
+    #nadpisanie SHEETS_CACHE
+    SHEETS_CACHE['Przychody'] = oldDfIncome
+    SHEETS_CACHE['Wydatki'] = oldDfExpense
     #zapis z powrotem do starego pliku
     with pd.ExcelWriter(EXCEL_PATH) as writer:
         oldDfIncome.to_excel(writer, sheet_name='Przychody', float_format="%.2f", index=False)
@@ -419,14 +458,13 @@ def merge_data(old_df, new_df, keys):
             merged_df = pd.concat([merged_df, pd.DataFrame([new_row_dict])], ignore_index=True)
 
     return merged_df
-                
 
-#route to handle save edited records back to the file
+#edycja rekordu
 @app.route('/zapisz', methods=['POST'])
 @login_required
 def zapisz():
     #wczytanie wszystkich danych do dataframeow
-    all_sheets = pd.read_excel(EXCEL_PATH, sheet_name=None)
+    all_sheets = {name: df.copy() for name, df in SHEETS_CACHE.items()}
 
     kontrahent = request.form.get("kontrahent")
     typ = request.form.get("typ")
@@ -440,14 +478,6 @@ def zapisz():
     except ValueError:
         return "Błędny format indeksu", 400
 
-    print("Odebrano dane:")
-    print("kontrahent:", kontrahent)
-    print("typ:", typ)
-    print("branch:", branch)
-    print("naglowki:", naglowki)
-    print("wartosci:", wartosci)
-    print("index:", index)
-
     if not kontrahent or not naglowki or not wartosci or not typ or not branch:
         return "Brak wymaganych danych", 400
     
@@ -456,24 +486,16 @@ def zapisz():
 
     if len(naglowki) != len(wartosci):
         return "Nieprawidłowa liczba miesięcy i wartości", 400
-
-
     
     if not os.path.exists(EXCEL_PATH):
         return 'Error: no such file or directory', 500
     
-    #df = pd.read_excel(EXCEL_PATH, sheet_name=typ)
     df = all_sheets[typ]
     df = preprocess_data(df)
-
-
-
     typy_kolumn = df.dtypes.to_dict()
-
     dane = {}
     for naglowek, wartosc in zip(naglowki, wartosci):
         if pd.api.types.is_numeric_dtype(typy_kolumn.get(naglowek)):
-            # liczba → konwertujemy na float (jeśli puste, to NaN)
             try:
                 dane[naglowek] = float(wartosc.replace(",", ".").replace(" ", "")) if wartosc.strip() != "" else None
             except ValueError:
@@ -484,41 +506,73 @@ def zapisz():
     df['Etykiety_proc'] = df['Etykiety'].str.strip().str.upper()
     branch_proc = branch.strip().upper()
 
-    #Updates rows for specific company and month
     df['Lp.'] = pd.to_numeric(df['Lp.'], errors='coerce').astype('Int64')
     idx = (
         (df['Lp.'] == index)&
         (df['Etykiety_proc'] == branch_proc) &
         (df['Kontrahent'] == kontrahent) 
           )
-    #check if any row can be updated
     if idx.sum() == 0:
-        print("Dostępne Lp.:", df['Lp.'].unique())
-        print("Dostępne etykiety:", df['Etykiety_proc'].unique())
-        print("Dostępni kontrahenci:", df['Kontrahent'].unique())
         return "Nie znaleziono rekordu do aktualizacji", 404
 
-
-    #replace row with new data
     for kol, val in dane.items():
         df.loc[idx, kol] = val
 
-    # Save the updated DataFrame back to the Excel file
     df_to_save = df.drop(columns=["Etykiety_proc", "Miesiąc"], errors='ignore')
     all_sheets[typ] = df_to_save
-
-    #for col in ['Data wystawienia', 'Termin płatności']:
-     #   if col in df_to_save.columns:
-      #      df_to_save[col] = pd.to_datetime(df_to_save[col], errors='coerce').dt.date
-
-    with pd.ExcelWriter(EXCEL_PATH, engine='openpyxl') as writer:
-        for sheet_name, sheet_df in all_sheets.items():
-            sheet_df.to_excel(writer, sheet_name=sheet_name, index =False)
-        
-        #df_to_save.to_excel(writer, sheet_name=typ, index=False)
-
+    try:
+        with pd.ExcelWriter(EXCEL_PATH, engine='openpyxl') as writer:
+            for sheet_name, sheet_df in all_sheets.items():
+                sheet_df.to_excel(writer, sheet_name=sheet_name, index =False)
+    except Exception as e:
+        return f"Błąd podczas zapisu do pliku Excel: {e}", 500
+    SHEETS_CACHE[typ] = df_to_save.copy()
     return 'Zapisano', 200
 
+@app.route('/addRecord', methods=['POST'])
+@login_required
+def addRecord():
+    sheetType = request.form.get("typ")
+    if not sheetType or sheetType not in SHEETS_CACHE:
+        return {"status": "error", "message": "Błędny lub brakujący typ arkusza"}, 400
+
+    df = SHEETS_CACHE[sheetType]
+    
+    # Definicja kolumn dla każdego arkusza
+    columns_przychody = ['Lp.', 'Nr dokumentu', 'Kontrahent', 'Rodzaj', 'Data wystawienia', 'Termin płatności', 'Zapłacono', 'Pozostało', 'Razem', 'Kwota netto', 'Metoda', 'Etykiety']
+    columns_wydatki = ['Lp.', 'Nr dokumentu', 'Kontrahent', 'Data wystawienia', 'Termin płatności', 'Zapłacono', 'Pozostało', 'Razem', 'Kwota netto', 'Kwota VAT', 'Etykiety']
+    
+    expected_columns = columns_przychody if sheetType == "Przychody" else columns_wydatki
+    
+    # Tworzenie czystego rekordu
+    clean_record = {}
+    for col in expected_columns:
+        # Lp. jest obsługiwane osobno
+        if col == 'Lp.':
+            continue
+        clean_record[col] = request.form.get(col, "")
+
+    # Ustawienie nowego Lp.
+    max_lp = int(df["Lp."].max()) + 1 if not df.empty and pd.to_numeric(df["Lp."], errors='coerce').notna().any() else 1
+    clean_record['Lp.'] = max_lp
+
+    # Dodanie nowego rekordu do DataFrame w cache
+    new_row_df = pd.DataFrame([clean_record])
+    SHEETS_CACHE[sheetType] = pd.concat([df, new_row_df], ignore_index=True)
+    
+    # Zapis całego skoroszytu z zaktualizowanym arkuszem
+    with pd.ExcelWriter(EXCEL_PATH, engine="openpyxl") as writer:
+        for sheet_name, sheet_df in SHEETS_CACHE.items():
+            # Upewnienie się, że kolejność kolumn jest prawidłowa przed zapisem
+            if sheet_name == "Przychody":
+                sheet_df = sheet_df.reindex(columns=columns_przychody)
+            elif sheet_name == "Wydatki":
+                sheet_df = sheet_df.reindex(columns=columns_wydatki)
+            sheet_df.to_excel(writer, sheet_name=sheet_name, float_format="%.2f", index=False)
+
+    # Zwrócenie czystego rekordu do frontendu
+    print(clean_record)
+    return {"status": "ok", "added": clean_record}
 
 
 if __name__ == '__main__':

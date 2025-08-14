@@ -22,13 +22,12 @@
         </tr>
         {% if wynagrodzenia_podzial and wynagrodzenia_podzial|length > 0 and suma_wyplat > 0 %}
             {% for osoba, values in wynagrodzenia_podzial.items() %}
-            {% set suma_osoby = values|sum %}
             <tr>
                 <td>{{ osoba }}</td>
                 {% for v in values %}
-                    <td>{{ v|format_number }}</td>
+                    <td {% if loop.last%}class="sumarow"{%endif%}>{{v|format_number}}</td>
                 {% endfor %}
-                <td class="sumarow">{{ suma_osoby|format_number }}</td>
+                <!--<td class="sumarow">{{ suma_osoby|format_number }}</td>-->
             </tr>
             {% endfor %}
         {% else %}

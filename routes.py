@@ -1,6 +1,7 @@
-from flask import Blueprint, render_template, request
+#from flask import Blueprint, render_template, request
 
-bp = Blueprint("main",__name__)
+
+#bp = Blueprint("main",__name__)
 
 
 #@bp.route('/')

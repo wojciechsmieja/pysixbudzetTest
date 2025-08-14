@@ -28,6 +28,19 @@ const columnTypesOutcome = {
 }
 
 document.addEventListener("DOMContentLoaded", function () {
+    //DODawanie rekordu
+    const guzikExpense = document.querySelector(".submit-add-expense-record-btn");
+    const guzikIncome = document.querySelector(".submit-add-income-record-btn");
+    if(guzikExpense){
+        guzikExpense.addEventListener('click', (event)=>{AddRecord(event);closeForm();});
+    }
+    if(guzikIncome){
+        guzikIncome.addEventListener('click', (event)=>{AddRecord(event);closeForm();});
+    }
+    const cancelButtons = document.querySelectorAll(".cancel-add-record-btn");
+    cancelButtons.forEach(btn => {
+        btn.addEventListener('click',closeForm);
+    })
     //odwolanie do tabeli
     const table = document.querySelector("table");
     
@@ -243,4 +256,105 @@ function validateRow() {
         alert(errors.join("\n"));
     }
     return isValid;
+}
+function closeForm(){
+    const activeDiv = document.querySelector(".active");
+    const active = activeDiv.querySelector('form');
+    if(active){
+        activeDiv.classList.remove("active");
+    }
+}
+//obsluga dodawania rekordu
+function openForm(){
+    if(document.querySelector("form.active")){
+        return;
+    }
+    const typInput = document.querySelector("input[name='typ']");
+    const branchInput = document.querySelector('input[name="branch"]');
+    const type = typInput.value;
+    const branch = branchInput.value;
+    const formExpense = document.querySelector(".add-record-form-expense")
+    const formIncome = document.querySelector(".add-record-form-income")
+    const formToShow = type === "Przychody" ? formIncome : formExpense;
+    if(formToShow){
+        formToShow.classList.add('active');
+        const dateInputs = formToShow.querySelectorAll("input[type='date']");
+        let now = new Date();
+        let day = ("0"+now.getDate()).slice(-2);
+        let month = ("0"+(now.getMonth() + 1)).slice(-2);
+        let today = now.getFullYear()+"-"+month+"-"+day;
+        dateInputs.forEach(input => input.value = today);
+        const etykietyInput = formToShow.querySelector("input[name='Etykiety']");
+        if(etykietyInput){
+            etykietyInput.value = branch;
+        }
+    }
+}
+   
+function AddRecord(event){
+    event.preventDefault();
+    const activeDiv = document.querySelector(".active");
+    const activeForm = activeDiv.querySelector('form');
+    if(!activeForm){
+        console.error("Nie znaleziono aktywnego formularza.");
+        return;
+    }
+    const typInput = document.querySelector("input[name='typ']");
+    const branchInput = document.querySelector('input[name="branch"]');
+    const formData = new FormData();
+    formData.append("branch", branchInput.value);
+    formData.append("typ",typInput.value);
+    
+    const inputs = activeForm.querySelectorAll("input");
+    inputs.forEach(input =>{
+        if(input.name){
+            formData.append(input.name,input.value);
+        }
+    })
+    for (const pair of formData.entries()) {
+        console.log(pair[0], pair[1]);
+    }
+
+    fetch('/addRecord',{
+        method: 'POST',
+        body:formData,
+    })
+    .then(res => {
+        if(!res.ok) throw new Error('Błąd zapisu'+ res.status+ ' ' + res.statusText);
+        return res.json();
+    })
+    .then(response => {
+        const columnsI = ['Lp.','Nr dokumentu','Kontrahent','Rodzaj','Data wystawienia','Termin płatności','Zapłacono','Pozostało','Razem','Kwota netto','Metoda','Etykiety'];
+        const columnsE = ['Lp.','Nr dokumentu','Kontrahent','Data wystawienia','Termin płatności','Zapłacono','Pozostało','Razem','Kwota netto','Kwota VAT','Etykiety'];
+        activeForm.classList.remove("active");
+        const newRecord = response.added;
+        const table = document.querySelector(".data-table tbody");
+        const row = document.createElement("tr");
+        console.log(newRecord);
+        if(typInput.value==="Przychody"){
+            columnsI.forEach(col =>{
+                const cell = document.createElement("td");
+                cell.textContent = newRecord[col] !== undefined ? newRecord[col] : "";
+                row.appendChild(cell);
+            });
+        }else{
+            columnsE.forEach(col =>{
+                const cell = document.createElement("td");
+                cell.textContent = newRecord[col] !== undefined ? newRecord[col] : "";
+                row.appendChild(cell);
+            });
+        }
+        const cell = document.createElement("td");
+        const editBtn = document.createElement("button");
+        editBtn.textContent = "Edit";
+        editBtn.classList.add("edit-btn");
+        cell.appendChild(editBtn);
+        row.append(cell);
+        table.appendChild(row);
+        alert('Zapisano zmiany!');
+    })
+    .catch(error => {
+        console.error('Błąd:', error);
+        alert('Wystąpił błąd podczas zapisu: '+error.message);
+    });
 }
