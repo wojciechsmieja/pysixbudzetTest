@@ -129,22 +129,50 @@
         <div class="dokumenty-import-add">
             <form action="/importExcel" method="POST" enctype="multipart/form-data" class="import-excel">
                 <label for="file-upload" class="import-excel-label">
-                    <svg width="18" height="18" viewBox="6 0 24 18" fill="none">
-                    <path d="M12 4v12" stroke="#222" stroke-width="2" stroke-linecap="round"/>
-                    <path d="M8 12l4 4 4-4" fill="#222"/>
-                    <path d="M6 20h12" stroke="#222" stroke-width="2" stroke-linecap="round"/>
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         width="18" height="18"
+                         viewBox="0 0 24 18"
+                         fill="none">
+                      <path d="M4 12C4 16.4183 7.58172 20 12 20C16.4183 20 20 16.4183 20 12"
+                            stroke="#1C274C"
+                            stroke-width="1.5"
+                            stroke-linecap="round"/>
+                      <path d="M12 4L12 14M12 14L15 11M12 14L9 11"
+                            stroke="#1C274C"
+                            stroke-width="1.5"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"/>
                     </svg>
+
                     Import .xlsx
                 </label>
                 <input id="file-upload" type="file" name="file" accept=".xlsx" style="display:none;" onchange="this.form.submit()">
             </form>
             <button class="add-record-btn, import-excel" id="add-record" onclick="openForm()">
-                <svg width="22" height="18" viewBox="6 0 24 18" fill="none">
-                  <path d="M6 2h9l5 5v15H6V2z" fill="none" stroke="#222" stroke-width="1.5"/>
-                  <path d="M14 2v6h6" fill="none" stroke="#222" stroke-width="1.5"/>
-                  <path d="M22 12l-6-3v2h-6v2h6v2l6-3z" fill="#222"/>
+                <svg width="18" height="18" viewBox="0 0 93.758 93.758" fill="none">
+                    <g>
+                        <g>
+                            <path d="M84.275,57.507H71.396V28.271L47.27,11.611l3.832-10.949H3.483v93.096h67.912V80.765h12.879c3.312,0,6-2.687,6-6V63.507
+                                C90.275,60.193,87.589,57.507,84.275,57.507z M84.436,74.748H60.268v12.062L37.905,69.119l22.361-17.692V63.49h24.168
+                                L84.436,74.748L84.436,74.748z" fill="#222"/>
+                            <polygon points="57.798,0 54.692,8.873 73.327,21.739" fill="#222"/>
+                        </g>
+                    </g>
                 </svg>
-                Dodaj dane</button>
+                Dodaj dane
+            </button>
+            <button class="truncate-table-btn, import-excel" id="truncate_table">
+                <svg width="18" height="18" viewBox="0 0 24 18" fill="none">
+                    <path xmlns="http://www.w3.org/2000/svg" fill-rule="evenodd" clip-rule="evenodd" d="M3.49997 12.8995C2.71892 13.6805 2.71892 14.9468 3.49997 15.7279L7.35785 19.5858H4.08576C3.53347 19.5858 3.08576 20.0335 3.08576 20.5858C3.08576 21.1381 3.53347 21.5858 4.08576 21.5858H20.0858C20.638 21.5858 21.0858 21.1381 21.0858 20.5858C21.0858 20.0335 20.638 19.5858 20.0858 19.5858H10.9558L20.4705 10.071C21.2516 9.28999 21.2516 8.02366 20.4705 7.24261L16.2279 2.99997C15.4468 2.21892 14.1805 2.21892 13.3995 2.99997L3.49997 12.8995ZM7.82579 11.4021L4.91418 14.3137L9.15683 18.5563L12.0684 15.6447L7.82579 11.4021ZM9.24 9.98787L13.4826 14.2305L19.0563 8.65683L14.8137 4.41418L9.24 9.98787Z" fill="#000000"/>
+                </svg>
+                Wyczyść plik              
+            </button>
+            <button class="download-table-btn, import-excel" id="download_table">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 18" fill="none">
+                  <path d="M17 17H17.01M17.4 14H18C18.9319 14 19.3978 14 19.7654 14.1522C20.2554 14.3552 20.6448 14.7446 20.8478 15.2346C21 15.6022 21 16.0681 21 17C21 17.9319 21 18.3978 20.8478 18.7654C20.6448 19.2554 20.2554 19.6448 19.7654 19.8478C19.3978 20 18.9319 20 18 20H6C5.06812 20 4.60218 20 4.23463 19.8478C3.74458 19.6448 3.35523 19.2554 3.15224 18.7654C3 18.3978 3 17.9319 3 17C3 16.0681 3 15.6022 3.15224 15.2346C3.35523 14.7446 3.74458 14.3552 4.23463 14.1522C4.60218 14 5.06812 14 6 14H6.6M12 15V4M12 15L9 12M12 15L15 12" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Pobierz plik              
+            </button>
         </div>
     </div>
     {% if rows|length == 0 %}
@@ -154,7 +182,7 @@
             <thead>
                 <tr>
                     {% for col in rows[0].keys() %}
-                        <th>{{ col }}</th>
+                        <th class="sortable" data-column-index="{{ loop.index0 }}">{{ col }}</th>
                     {% endfor %}
                     <th>Akcje</th>
                 </tr>
@@ -166,12 +194,16 @@
                         {% for val in row.values() %}
                             <td class="{{ 'numeric' if val is number else '' }}">{{ val }}</td>
                         {% endfor %}
-                        <td><button class="edit-btn">Edit</button></td>
+                        <td>
+                            <button class="edit-btn">Edytuj</button>
+                            <button class="delete-btn">Usuń</button>
+                        </td>
                     </tr>
                 {% endfor %}
             </tbody>
         </table>
     {% endif %}
+    
     <input type="hidden" name="typ" value="{{typ}}">
     <input type="hidden" name="branch" value="{{branch}}">
 

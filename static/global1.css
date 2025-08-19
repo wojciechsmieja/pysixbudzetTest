@@ -158,24 +158,27 @@ footer {
     overflow: visible;
     display: flex;
     flex-direction: row;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
     border-bottom: none;
 
 }
 .navbar-spacer{
-    display: flex;
-    margin:auto;
-    opacity: 0;
+    display: none;
 }
 .navbar-inner {
+    position:absolute;
+    left: 50%;
+    transform: translate(-50%);
     display: flex;
     flex-direction: row;
     justify-content: center;
     align-items: center;
     gap: 32px;
+
+
+    position: relative;
     z-index: 2;
-    margin:auto;
 }
 .main-navbar .nav-btn {
     display: flex;
@@ -221,7 +224,7 @@ footer {
 }
 .logout-section{
     display: flex;
-    margin:auto;
+    margin-left:auto;
     margin-right:10px;
     align-items: center;
 }
@@ -278,29 +281,6 @@ footer {
     outline: 2px solid #2563eb;
     outline-offset: 2px;
     transition: outline 0.2s;
-}
-.th.sortable{
-    cursor: pointer;
-    position:relative;
-    padding-right: 20px;
-}
-
-th.sortable::after {
-  content: '';
-  position: absolute;
-  right: 5px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 0.8em;
-  color: #666;
-}
-
-th.sortable.asc::after {
-  content: '▲';
-}
-
-th.sortable.desc::after {
-  content: '▼';
 }
 
 /* --- RESPONSYWNOŚĆ TABELI I DASHBOARDU --- */

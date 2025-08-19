@@ -1,5 +1,5 @@
 
-from flask import Flask, render_template, request, url_for, redirect, flash, session
+from flask import Flask, render_template, request, url_for, redirect, flash, session, send_file
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user 
 import bcrypt
 from markupsafe import escape
@@ -13,7 +13,8 @@ from extensions import db
 from models import User
 from dotenv import load_dotenv
 
-
+#widok wszystkich dokumentow, usuwanie + czyszczenie calej bazy
+#instrukcja orzeniesienia
 
 #Initialize app
 app = Flask(__name__)
@@ -165,6 +166,11 @@ def login():
 @app.route('/register', methods = ['GET','POST'])
 def register():
     return render_template("register.html")
+@app.route('/registerUser', methods = ['POST'])
+def registerUser():
+    flash('Nie obsługujemy dodawania użytkowników (jeszcze)')
+
+    return redirect(url_for('login'))
 @app.route('/logout')
 def logout():
     session.clear() #usuwa sesje
@@ -183,11 +189,13 @@ def dashboard():
         return render_template('analiza.html', typ=typ, branches=[], branch='', months_order=[], suma_row_list=[], kontrahenci_sorted=[], pivot={}, sort_by='', sort_order='desc', error=str(e))
     if df.empty or 'Etykiety' not in df.columns:
         return render_template('analiza.html', typ=typ, branches=[], branch='', months_order=[], suma_row_list=[], kontrahenci_sorted=[], pivot={}, sort_by='', sort_order='desc', error='Brak danych w pliku budżetu!')
-    unique_branches = df[['Etykiety', 'Etykiety_proc']].drop_duplicates()
+    
+    unique_branches = df.drop_duplicates(subset=['Etykiety_proc'])
     branches = unique_branches['Etykiety'].tolist()
     etykieta_map = dict(zip(unique_branches['Etykiety'], unique_branches['Etykiety_proc']))
     branch_org = request.args.get('branch', branches[0] if branches else '')
     branch_proc = etykieta_map.get(branch_org, branch_org)
+    
     branch_df = df[df['Etykiety_proc'] == branch_proc]
     if branch_df.empty:
         pivot = {}
@@ -235,9 +243,8 @@ def analiza():
         return render_template('analiza.html', typ=typ, branches=[], branch='', months_order=[], suma_row_list=[], kontrahenci_sorted=[], pivot={}, sort_by='', sort_order='desc', error=str(e))
     if df.empty or 'Etykiety' not in df.columns:
         return render_template('analiza.html', typ=typ, branches=[], branch='', months_order=[], suma_row_list=[], kontrahenci_sorted=[], pivot={}, sort_by='', sort_order='desc', error='Brak danych w pliku budżetu!')
-    unique_branches = df[['Etykiety', 'Etykiety_proc']].drop_duplicates()
-    print(df[['Etykiety','Etykiety_proc']])
-    print(unique_branches)
+    
+    unique_branches = df.drop_duplicates(subset=['Etykiety_proc'])
     branches = unique_branches['Etykiety'].tolist()
     etykieta_map = dict(zip(unique_branches['Etykiety'], unique_branches['Etykiety_proc']))
     branch_org = request.args.get('branch', branches[0] if branches else '')
@@ -368,11 +375,22 @@ def dokumenty():
     unique_branches = df[['Etykiety', 'Etykiety_proc']].drop_duplicates()
     branches = unique_branches['Etykiety'].tolist()
     etykieta_map = dict(zip(unique_branches['Etykiety'], unique_branches['Etykiety_proc']))
-
+    #Add value 'wszystkie' to branches to list all records
+    branches.insert(0,'WSZYSTKIE')
     branch_org = request.args.get('branch', branches[0] if branches else '')
-    branch_proc = etykieta_map.get(branch_org, branch_org)
+    #filtering by branch logic
+    if branch_org == 'WSZYSTKIE':
+        filtered_df = df
+    else:
+        branch_proc = etykieta_map.get(branch_org)
+        if branch_proc:
+            filtered_df = df[df['Etykiety_proc']==branch_proc]
+        else:
+            filtered_df = df
 
-    filtered_df = df[df['Etykiety_proc'] == branch_proc] if branch_proc else df
+    #branch_proc = etykieta_map.get(branch_org, branch_org)
+
+    #filtered_df = df[df['Etykiety_proc'] == branch_proc] if branch_proc else df
     
     # Poprawiona lista kolumn do usunięcia
     cols_to_drop = ['Etykiety_proc', 'Miesiąc', 'Zaplacono', 'Pozostalo']
@@ -417,9 +435,9 @@ def importExcel():
         flash(f"Error: {e}, nie udał się import pliku.")
         return redirect(url_for('dokumenty'))
     #łączenie sheetu przychody
-    oldDfIncome = merge_data(oldDfIncome,newDfIncome, keys=['Nr dokumentu','Kontrahent','Rodzaj','Etykiety'])
+    oldDfIncome = merge_data(oldDfIncome,newDfIncome, keys=['Nr dokumentu'])#tylko nr dokumentu
     #lączenie sheetu wydatki
-    oldDfExpense = merge_data(oldDfExpense,newDfExpense, keys=['Nr dokumentu','Kontrahent','Etykiety'])
+    oldDfExpense = merge_data(oldDfExpense,newDfExpense, keys=['Nr dokumentu'])#tu tez
     #nadpisanie SHEETS_CACHE
     SHEETS_CACHE['Przychody'] = oldDfIncome
     SHEETS_CACHE['Wydatki'] = oldDfExpense
@@ -438,24 +456,35 @@ def merge_data(old_df, new_df, keys):
     merged_df = old_df.copy()
 
     for _, new_row in new_df.iterrows():
+        mask = pd.Series([True] * len(merged_df))
+        for k in keys:
+            if k in merged_df.columns:
+                mask &= (merged_df[k] == new_row[k])
         #szukamy w starym pliku wiersza o takich samych kluczach
-        mask = (merged_df[keys[0]] == new_row[keys[0]]) & (merged_df[keys[1]] == new_row[keys[1]]) & (merged_df[keys[2]] == new_row[keys[2]])
-        if len(keys) == 4:
-            mask &= (merged_df[keys[3]] == new_row[keys[3]])
+        #mask = (merged_df[keys[0]] == new_row[keys[0]]) #& (merged_df[keys[1]] == new_row[keys[1]]) & (merged_df[keys[2]] == new_row[keys[2]])
+        #if len(keys) == 4:
+         #   mask &= (merged_df[keys[3]] == new_row[keys[3]])
         
         if mask.any():
             #Aktualizacja istniejącego wiersza
             idx = merged_df[mask].index[0]
             for col in merged_df.columns:
-                if col != 'Lp.':
+                if col != 'Lp.' and col in new_row.index:
                     merged_df.at[idx, col] = new_row[col]
         else:
+            if not merged_df.empty and 'Lp.' in merged_df.columns:
+                merged_df['Lp.'] = pd.to_numeric(merged_df['Lp.'], errors='coerce').fillna(0)
+                max_lp = merged_df['Lp.'].max()
+                new_lp = int(max_lp) +1 if pd.notna(max_lp) else 1
+            else:
+                new_lp=1
             #Dodanie nowego wierszaz nowym Lp.
-            merged_df['Lp.'] = pd.to_numeric(merged_df['Lp.'], errors="coerce").fillna(0).astype(int)
-            new_lp = merged_df['Lp.'].max() + 1 if not merged_df.empty else 1
+            #merged_df['Lp.'] = pd.to_numeric(merged_df['Lp.'], errors="coerce").fillna(0).astype(int)
+            #new_lp = merged_df['Lp.'].max() + 1 if not merged_df.empty else 1
             new_row_dict = new_row.to_dict()
             new_row_dict['Lp.'] = new_lp
-            merged_df = pd.concat([merged_df, pd.DataFrame([new_row_dict])], ignore_index=True)
+            new_df_row = pd.DataFrame([new_row_dict])
+            merged_df = pd.concat([merged_df, new_df_row], ignore_index=True)
 
     return merged_df
 
@@ -472,7 +501,8 @@ def zapisz():
     naglowki = request.form.getlist("naglowki[]")
     wartosci = request.form.getlist("wartosci[]")
     index = request.form.get("index")
-
+    if branch == "WSZYSTKIE":
+        branch = wartosci[-1]
     try:
         index = int(index)
     except ValueError:
@@ -574,6 +604,67 @@ def addRecord():
     print(clean_record)
     return {"status": "ok", "added": clean_record}
 
+@app.route('/deleteRecord', methods=['POST'])
+@login_required
+def deleteRecord():
+    data = request.get_json()
+    typ = data.get('typ')
+    lpToDelete = data.get('lp')
+    if not typ or not lpToDelete:
+        return {"status":"Error","message":"Brakujący typ lub lp"}, 400
+    
+    if typ not in SHEETS_CACHE:
+        return {"status": "Error", "message":"Nieprawidłowy typ arkusza"},400
+    
+    try:
+        df = SHEETS_CACHE[typ]
+        df['Lp.'] = pd.to_numeric(df['Lp.'],errors = 'coerce')
+        lpToDelete = int(lpToDelete)
+        if not df[df['Lp.'] == lpToDelete].empty:
+            df = df[df['Lp.'] != lpToDelete].copy()
+            SHEETS_CACHE[typ] = df
+            with pd.ExcelWriter(EXCEL_PATH, engine="openpyxl") as writer:
+                for sheet_name, sheet_df in SHEETS_CACHE.items():
+                    sheet_df.to_excel(writer, sheet_name=sheet_name, float_format="%.2f", index=False)
+            return {"status": "ok", "message": "Rekord usunięty"}
+        else:
+            return {"status": "Error", "message": "Nie znaleziono rekordu do usunięcia"}, 404
+    except Exception as e:
+        return {"status": "Error", "message": f"Błąd podczas usuwania rekordu: {e}"}, 500
+
+@app.route('/truncateTable', methods=['POST'])
+@login_required
+def truncateTable():
+    data = request.get_json()
+    typ = data.get("typ")
+    if not typ:
+        return {"status": "Error", "message": "Brakujący typ arkusza"}, 400
+    if typ not in SHEETS_CACHE:
+        return {"status": "Error", "message": "Nieprawidłowy typ arkusza"}, 400
+
+    try:
+        #gemini version
+        columns_przychody = ['Lp.', 'Nr dokumentu', 'Kontrahent', 'Rodzaj', 'Data wystawienia', 'Termin płatności', 'Zapłacono', 'Pozostało', 'Razem', 'Kwota netto', 'Metoda','Etykiety']
+        columns_wydatki = ['Lp.', 'Nr dokumentu', 'Kontrahent', 'Data wystawienia', 'Termin płatności', 'Zapłacono', 'Pozostało', 'Razem', 'Kwota netto', 'Kwota VAT', 'Etykiety']
+        empty_df = pd.DataFrame(columns=(columns_przychody if typ == "Przychody" else columns_wydatki))
+        SHEETS_CACHE[typ] = empty_df
+        with pd.ExcelWriter(EXCEL_PATH, engine = 'openpyxl') as writer:
+            for sheet_name, sheet_df in SHEETS_CACHE.items():
+                sheet_df.to_excel(writer, sheet_name=sheet_name, float_format="%.2f", index=False)
+        return {"status": "ok", "message": "Arkusz wyczyszczony"}        
+        #moja wersja
+        #SHEETS_CACHE[typ].truncate()
+        #with pd.ExcelWriter(EXCEL_PATH, engine="openpyxl") as writer:
+        #    for sheet_name, sheet_df in SHEETS_CACHE.items():
+        #        sheet_df.to_excel(writer, sheet_name=sheet_name, float_format="%.2f", index=False)
+        #return {"status": "ok", "message": "Arkusz wyczyszczony"}
+    except Exception as e:
+        return {"status": "Error", "message": f"Błąd podczas czyszczenia arkusza: {e}"}, 500
+    
+@app.route('/downloadExcel')
+@login_required
+def downloadExcel():
+    return send_file(EXCEL_PATH, as_attachment=True)
 
 if __name__ == '__main__':
     import webbrowser

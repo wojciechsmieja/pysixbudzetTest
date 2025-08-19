@@ -3,7 +3,8 @@ input[type="text"]{
 }
 table .edit-btn,
 table .save-btn,
-table .cancel-btn{
+table .cancel-btn,
+table .delete-btn{
     font-weight: bold;
     padding:4px;
     margin:10px;
@@ -15,13 +16,16 @@ table .cancel-btn{
     min-width: 50px;
 }
 table .edit-btn{
-    background-color: #e3e7ee;
+    background-color: #b8b8b8;
 }
 table .save-btn{
     background-color: #4caf50;
 }
 table .cancel-btn{
     background-color: #f44336;
+}
+table .delete-btn{
+    background-color: #007bff;
 }
 th, td{
     text-align:center;
@@ -110,7 +114,6 @@ table.data-table input[type="date"]{
     width:100%;
     display: flex;
     justify-content: center;
-    
 }
 .dokumenty-form input[type="text"],
 .dokumenty-form select {

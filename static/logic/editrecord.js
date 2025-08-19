@@ -1,6 +1,7 @@
 //robie aby po nacisnięciu przyisku "edytuj" pojawiał się formularz do zmiany wartości w tabeli
 let editingRow = null;
 let originalData = [];
+let closeFormOutsideClickerListener = null;
 const columnTypesIncome = {
     1: "text", // nr dokumentu
     2: "text", // kontrahent
@@ -28,6 +29,16 @@ const columnTypesOutcome = {
 }
 
 document.addEventListener("DOMContentLoaded", function () {
+    //truncate file
+    const truncateBtn = document.getElementById('truncate_table');
+    if (truncateBtn){
+        truncateBtn.addEventListener('click', truncate);
+    }
+    //download button
+    const downloadBtn = document.getElementById("download_table");
+    if(downloadBtn){
+        downloadBtn.addEventListener('click', downloadTable);
+    }
     //DODawanie rekordu
     const guzikExpense = document.querySelector(".submit-add-expense-record-btn");
     const guzikIncome = document.querySelector(".submit-add-income-record-btn");
@@ -43,6 +54,29 @@ document.addEventListener("DOMContentLoaded", function () {
     })
     //odwolanie do tabeli
     const table = document.querySelector("table");
+    //odwolanie do th
+    const headers = table.querySelectorAll("th.sortable");
+
+
+    let currentSortColumn = -1;
+    let currentSortOrder = 'asc';
+
+    headers.forEach(header => {
+        header.addEventListener('click', function(){
+            const columnIndex = parseInt(this.dataset.columnIndex);
+            if(currentSortColumn === columnIndex){
+                currentSortOrder = (currentSortOrder === 'asc') ? 'desc' : 'asc';
+            }else{
+                currentSortColumn = columnIndex;
+                currentSortOrder = 'asc';
+            }
+            headers.forEach(h =>{
+                h.classList.remove('asc','desc');
+            });
+            this.classList.add(currentSortOrder);
+            sortTable(columnIndex, currentSortOrder);
+        });
+    });
     
     table.addEventListener("click", function (e) {
         const btn = e.target;
@@ -78,11 +112,11 @@ document.addEventListener("DOMContentLoaded", function () {
             cell.innerHTML = "";
 
             const cancelBtn = document.createElement("button");
-            cancelBtn.textContent = "Cancel";
+            cancelBtn.textContent = "Anuluj";
             cancelBtn.classList.add("cancel-btn");
 
             const saveBtn = document.createElement("button");
-            saveBtn.textContent = "Save";
+            saveBtn.textContent = "Zapisz";
             saveBtn.classList.add("save-btn");
 
             cell.appendChild(cancelBtn);
@@ -144,10 +178,15 @@ document.addEventListener("DOMContentLoaded", function () {
             const cell = row.querySelector("td:last-child");
             cell.innerHTML = "";
 
+            const deleteBtn = document.createElement("button");
+            deleteBtn.textContent = 'Usuń';
+            deleteBtn.classList.add("delete-btn");
+
             const editBtn = document.createElement("button");
-            editBtn.textContent = "Edit";
+            editBtn.textContent = "Edytuj";
             editBtn.classList.add("edit-btn");
             cell.appendChild(editBtn);
+            cell.appendChild(deleteBtn);
 
             //Zebranie danyych do wyslania na backend
             const formData = new FormData();
@@ -203,7 +242,6 @@ document.addEventListener("DOMContentLoaded", function () {
         //Click Cancel button
         else if (btn.classList.contains("cancel-btn") && editingRow) {
             const row = editingRow
-
             row.querySelectorAll("td").forEach((cell, index) => {
                 if (index < row.cells.length - 1) {
                     cell.textContent = originalData[index];
@@ -215,16 +253,66 @@ document.addEventListener("DOMContentLoaded", function () {
             const cell = row.querySelector("td:last-child");
             cell.innerHTML = "";
 
+            const deleteBtn = document.createElement("button");
+            deleteBtn.textContent = 'Usuń';
+            deleteBtn.classList.add("delete-btn");
+
             const editBtn = document.createElement("button");
-            editBtn.textContent = "Edit";
+            editBtn.textContent = "Edytuj";
             editBtn.classList.add("edit-btn");
             cell.appendChild(editBtn);
+            cell.appendChild(deleteBtn);
 
             editingRow = null;
             originalData = [];
         }
     });
 });
+document.querySelector("table").addEventListener('click', function(e){
+    if(e.target.classList.contains("delete-btn")){
+        const btn = e.target;
+        const row = btn.closest("tr");
+        const lp = row.dataset.index;
+        const typ = document.querySelector("input[name='typ']").value;
+        if(!lp){
+            alert("Błąd: Brak identyfikatora rekordu lp. do usunięcia");
+        }
+        if(confirm(`Czy na pewno chcesz usunąć rekord o Lp: ${lp}?`)){
+            fetch('/deleteRecord',{
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body:JSON.stringify({
+                    typ: typ,
+                    lp:lp
+                })
+            })
+            .then(response => {
+                return response.json().then(data =>{
+                    if(!response.ok)
+                        throw new Error(data.message || `Błąd serwera: ${response.status}`);
+                    return data;
+                });
+            })
+            .then(data=>{
+                if(data.status ==='ok'){
+                    row.remove();
+                    alert('Rekord został usunnięty');
+                    console.log('Odpowiedź serwera(usuwanie):', data);
+                }else{
+                    throw new Error(data.message || 'Nieznany błąd');
+                }
+            })
+            .catch(error => {
+                console.error('Błąd:', error);
+                alert('Wystąpił błąd podczas usuwania: '+error.message);
+            });
+        }
+    }
+})
+
+
 function validateRow() {
     let isValid = true;
     let errors = [];
@@ -257,6 +345,23 @@ function validateRow() {
     }
     return isValid;
 }
+function sortTable(columnIndex, sortOrder){
+    const table =document.querySelector(".data-table");
+    const tbody = table.querySelector('tbody');
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+    rows.sort((rowA, rowB) => {
+        const cellA = rowA.children[columnIndex].textContent.trim();
+        const cellB = rowB.children[columnIndex].textContent.trim();
+        let comparasion = 0;
+        if (!isNaN(cellA) && !isNaN(cellB) && cellA !== '' && cellB !== '') {
+            comparasion = parseFloat(cellA)-parseFloat(cellB);
+        }else{
+            comparasion = cellA.localeCompare(cellB);
+        }
+        return sortOrder === 'asc' ? comparasion : -comparasion;
+    });
+    rows.forEach(row=>tbody.appendChild(row));
+}
 function closeForm(){
     const activeDiv = document.querySelector(".active");
     const active = activeDiv.querySelector('form');
@@ -286,11 +391,21 @@ function openForm(){
         dateInputs.forEach(input => input.value = today);
         const etykietyInput = formToShow.querySelector("input[name='Etykiety']");
         if(etykietyInput){
-            etykietyInput.value = branch;
+            etykietyInput.value = 'ADS';
         }
     }
 }
-   
+
+/*document.addEventListener('click', function(e) {
+    const activediv = document.querySelector(".active");
+    if(activediv){
+        const form = activediv.querySelector("form");
+        if(form && !form.contains(e.target) && !e.target.closest(".submit-add-expense-record-btn") && !e.target.closest(".submit-add-income-record-btn")){
+            closeForm();
+        }
+    }
+});
+  */ 
 function AddRecord(event){
     event.preventDefault();
     const activeDiv = document.querySelector(".active");
@@ -346,7 +461,7 @@ function AddRecord(event){
         }
         const cell = document.createElement("td");
         const editBtn = document.createElement("button");
-        editBtn.textContent = "Edit";
+        editBtn.textContent = "Edytuj";
         editBtn.classList.add("edit-btn");
         cell.appendChild(editBtn);
         row.append(cell);
@@ -357,4 +472,49 @@ function AddRecord(event){
         console.error('Błąd:', error);
         alert('Wystąpił błąd podczas zapisu: '+error.message);
     });
+}
+
+function truncate(){
+    const typInput = document.querySelector("input[name='typ']");
+    const type = typInput.value;
+    if(confirm('Jestes absolutnie pewnien, że chcesz usunąc zawartość pliku? Tej operacji nie można cofnąć!')){
+        const confirmationText = "USUŃ";
+        const userInput = prompt(`Aby potwierdzić usuwanie zawartości pliku wpisz słowo: ${confirmationText} w ponizszym polu:`);
+        if (userInput === confirmationText){
+            fetch('/truncateTable', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({typ: type})
+            })
+            .then(response=> response.json().then(data=>{
+                if(!response.ok){
+                    throw new Error(data.message || 'Błąd serwera przy usuwaniu arkusza');
+                }
+                return data;
+            }))
+            .then(data=>{
+                if(data.status === "ok"){
+                    const tableBody = document.querySelector(".data-table tbody");
+                    if (tableBody){
+                        tableBody.innerHTML = '<tr><td colspan="12" style="test-align:center;color:#888;">Tabela została wyczyszczona.</td></tr>';
+                    }
+                    alert(`Tabela "${type}" została pomyślnie wyczyszczona.`);
+                }else{
+                    throw new Error(data.message || 'Wystąpił nieznany błąd.');
+                }
+            })
+            .catch(error=>{
+                console.error('Błąd:',error);
+                alert('Wystapił błąd: '+ error.message);
+            });
+        }else{
+            alert("Anulowano. Wpisany tekst nie zgadzał się");
+        }
+    }
+
+}
+function downloadTable(){
+    window.location.href = "/downloadExcel";
 }
