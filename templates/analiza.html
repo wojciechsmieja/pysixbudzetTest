@@ -3,7 +3,8 @@
 <head>
     <title>Dashboard budżetowy firmy</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="/static/global.css">
+    <link rel="stylesheet" href="{{url_for('static', filename='global.css')}}">
+    <link rel="stylesheet" href="{{url_for('static', filename='analysis.css')}}">
 </head>
 <body>
     {% include 'navbar.html' %}
@@ -26,6 +27,19 @@
         </div>
         {% endif %}
     </form>
+    <div class="year-nav">
+        {% if min_year is not none and current_year > min_year%}
+            <a href="{{url_for('analiza',year=current_year-1)}}">&lt; Poprzedni rok</a>
+        {%else%}
+            <span>&lt; Poprzedni rok</span>
+        {%endif%}
+        <span class="current-year">{{current_year}}</span>
+        {% if max_year is not none and current_year < max_year %}
+            <a href="{{url_for('analiza',year=current_year+1)}}">Następny rok &gt;</a>
+        {%else%}
+            <span>Następny rok &gt;</span>
+        {%endif%}
+    </div>
     <h2>Zestawienie dla gałęzi: {{ branch }}</h2>
     <div class="table-scroll">
     <table>

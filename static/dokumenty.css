@@ -226,3 +226,29 @@ table.data-table input[type="date"]{
     cursor: pointer;
     transition: background-color 0.2s;
 } 
+/*style dla div-a z latami*/
+.year-nav {
+    text-align: center;
+    margin: 20px 0;
+    font-size: 1.2rem;
+}
+.year-nav a {
+    text-decoration: none;
+    background-color: #e3e7ee;
+    color: black;
+    padding: 5px 10px;
+    border: 1px solid #e3e7ee;
+    border-radius:5px;
+}
+.year-nav a:hover{
+    background-color:#2563eb;
+    color: #fff;
+}
+.year-nav span{
+    padding: 5px 10px;
+}
+.current-year{
+    font-size: 1.4em;
+    font-weight: bold;
+    font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif
+}

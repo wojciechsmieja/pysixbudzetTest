@@ -83,31 +83,23 @@ document.addEventListener("DOMContentLoaded", function () {
 
         //Click Edit button
         if (btn.classList.contains("edit-btn") && !editingRow) {
-            //odwolanie do wiersza, przypisanie do zmiennej i wyczyszczenie tablicy
             const row = btn.closest("tr");
             editingRow = row;
             originalData = [];
-            //dodanie klasy na wiersz
             row.classList.add("editing");
-            //odwolanie do 1 komorki w wierszu i dodanie do tablicy -> tego nie zmieniamy (to nasz index)
-            const firstVal = row.querySelector("td:first-child").textContent.trim();
-            originalData.push(firstVal);
 
-            //pobranie i sprawdzenie sheet-u -> ustawinie odpowiednich typów inputów 
-            const type = document.querySelector("input[name='typ']");
-            const typeValue = type ? type.value.trim() : "";
-            const columnTypes = typeValue === "Przychody" ? columnTypesIncome : columnTypesOutcome;
-            //iteracja i zamiana komorek na inputy i kopia wartosci do tablicy
+            const type = document.querySelector("input[name='typ']").value;
+            const columnTypes = type === "Przychody" ? columnTypesIncome : columnTypesOutcome;
+
             row.querySelectorAll("td").forEach((cell, index) => {
-                //opuszczenie 1 i ostatniego indexu
-                if (index < row.cells.length - 1 && index !==0 ) {
+                if (index < row.cells.length - 1) {
                     const value = cell.textContent.trim();
                     originalData.push(value);
-                    const inputType = columnTypes[index] || "text";
+                    const inputType = columnTypes[index + 1] || "text";
                     cell.innerHTML = `<input type="${inputType}" data-type="${inputType}" value="${value}" />`;
                 }
             });
-            //czyszczenie ostatniej komorki wiersza -> dodanie 2 innych przyciskow
+
             const cell = row.querySelector("td:last-child");
             cell.innerHTML = "";
 
@@ -121,7 +113,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
             cell.appendChild(cancelBtn);
             cell.appendChild(saveBtn);
-
         }
         //Click Save button
         else if (btn.classList.contains("save-btn") && editingRow) {
@@ -148,7 +139,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
             inputs.forEach((input, i) => {
-                const headerText = document.querySelectorAll("thead th")[i+1].textContent.trim();
+                const headerText = document.querySelectorAll("thead th")[i].textContent.trim();
                 if(headerText.startsWith("Suma roczna")) return;
 
                 naglowki.push(headerText);
@@ -164,7 +155,7 @@ document.addEventListener("DOMContentLoaded", function () {
             }*/
             //zapisanie wartosci z inputow do komorek
             row.querySelectorAll("td").forEach((cell, index) => {
-                if (index>0 && index < row.cells.length - 1) {
+                if (index < row.cells.length - 1) {
                     const input = cell.querySelector("input");
                     if(input){
                         const value = input.value.trim();
@@ -423,7 +414,16 @@ function AddRecord(event){
     const inputs = activeForm.querySelectorAll("input");
     inputs.forEach(input =>{
         if(input.name){
+            if (input["type"]==='number' && parseFloat(input.value) < 0){
+                alert("Wartości nie mogą być mniejsze od zera!");
+                inputs.forEach(i=>{
+                    if (i["type"]==='number')
+                    i.value=0;
+                });
+                throw new Error("Wartość ujemna");
+            }
             formData.append(input.name,input.value);
+
         }
     })
     for (const pair of formData.entries()) {
@@ -445,25 +445,35 @@ function AddRecord(event){
         const newRecord = response.added;
         const table = document.querySelector(".data-table tbody");
         const row = document.createElement("tr");
+        row.dataset.index=newRecord['Lp.'];
+        row.dataset.kontrahent = newRecord['Kontrahent'];
         console.log(newRecord);
         if(typInput.value==="Przychody"){
             columnsI.forEach(col =>{
-                const cell = document.createElement("td");
-                cell.textContent = newRecord[col] !== undefined ? newRecord[col] : "";
-                row.appendChild(cell);
+                if(col !== 'Lp.'){
+                    const cell = document.createElement("td");
+                    cell.textContent = newRecord[col] !== undefined ? newRecord[col] : "";
+                    row.appendChild(cell);
+                }
             });
         }else{
             columnsE.forEach(col =>{
-                const cell = document.createElement("td");
-                cell.textContent = newRecord[col] !== undefined ? newRecord[col] : "";
-                row.appendChild(cell);
+                if(col !== 'Lp.'){                
+                    const cell = document.createElement("td");
+                    cell.textContent = newRecord[col] !== undefined ? newRecord[col] : "";
+                    row.appendChild(cell);
+                }
             });
         }
         const cell = document.createElement("td");
         const editBtn = document.createElement("button");
         editBtn.textContent = "Edytuj";
         editBtn.classList.add("edit-btn");
+        const deleteBtn = document.createElement("button");
+        deleteBtn.textContent = "Usuń";
+        deleteBtn.classList.add("delete-btn");
         cell.appendChild(editBtn);
+        cell.appendChild(deleteBtn);
         row.append(cell);
         table.appendChild(row);
         alert('Zapisano zmiany!');
@@ -477,9 +487,9 @@ function AddRecord(event){
 function truncate(){
     const typInput = document.querySelector("input[name='typ']");
     const type = typInput.value;
-    if(confirm('Jestes absolutnie pewnien, że chcesz usunąc zawartość pliku? Tej operacji nie można cofnąć!')){
+    if(confirm('Jestes absolutnie pewnien, że chcesz usunąc zawartość arkusza? Tej operacji nie można cofnąć!')){
         const confirmationText = "USUŃ";
-        const userInput = prompt(`Aby potwierdzić usuwanie zawartości pliku wpisz słowo: ${confirmationText} w ponizszym polu:`);
+        const userInput = prompt(`Aby potwierdzić usuwanie zawartości arkusza wpisz słowo: ${confirmationText} w ponizszym polu:`);
         if (userInput === confirmationText){
             fetch('/truncateTable', {
                 method: 'POST',

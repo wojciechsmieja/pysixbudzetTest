@@ -13,24 +13,22 @@ from extensions import db
 from models import User
 from dotenv import load_dotenv
 
-#widok wszystkich dokumentow, usuwanie + czyszczenie calej bazy
-#instrukcja orzeniesienia
 
 #Initialize app
 app = Flask(__name__)
-app.config.from_object(Config)
-db.init_app(app)
+#app.config.from_object(Config)
+#db.init_app(app)
 #tworzymy tabele
-with app.app_context():
-    db.create_all()
+#with app.app_context():
+ #   db.create_all()
 
 app.secret_key = app.config['SECRET_KEY']
 app.permanent_session_lifetime = app.config['PERMANENT_SESSION_LIFETIME']
 EXCEL_PATH = 'budzet.xlsx'
 
-login_manager = LoginManager()
-login_manager.init_app(app)
-login_manager.login_view= 'login'
+#login_manager = LoginManager()
+#login_manager.init_app(app)
+#login_manager.login_view= 'login'
 
 SHEETS_CACHE = {
     sheet: pd.read_excel(EXCEL_PATH, sheet_name=sheet)
@@ -83,7 +81,7 @@ def preprocess_data(df):
     #Additional column
     if 'Data wystawienia' in df.columns:
         df['Miesiąc'] = df['Data wystawienia'].dt.month_name().map(month_map)
-
+        df['Rok'] = df['Data wystawienia'].dt.year
      #Number converion   
     for col in ['Zapłacono','Pozostało','Razem','Kwota netto']:
         if col in df.columns:
@@ -121,12 +119,14 @@ def jinja_format_number(val):
         return ''
     return format_number(val)
 
-@login_manager.user_loader
+#@login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
 
 @app.route('/', methods=['GET'])
 def home():
+    #linie ponizej usunac 
+    return redirect(url_for('dashboard'))
     return render_template("start.html")
 
 @app.route('/login', methods=['GET','POST'])
@@ -177,18 +177,23 @@ def logout():
     return redirect(url_for('login'))
 
 @app.route('/dashboard', methods=['GET'])
-@login_required
+#@login_required
 def dashboard():
     typ = request.args.get('typ', 'Przychody')
     if not os.path.exists(EXCEL_PATH):
-        return render_template('analiza.html', typ=typ, branches=[], branch='', months_order=[], suma_row_list=[], kontrahenci_sorted=[], pivot={}, sort_by='', sort_order='desc')
+        return render_template('analiza.html', typ=typ, branches=[], branch='', months_order=[], suma_row_list=[], kontrahenci_sorted=[], pivot={}, sort_by='', sort_order='desc', current_year=None,min_year=None,max_year=None)
     try:
-        df = SHEETS_CACHE[typ].copy()
-        df = preprocess_data(df)
+        df_full = SHEETS_CACHE[typ].copy()
+        df_full = preprocess_data(df_full)        
+        all_years = pd.concat([df_full['Rok']]).dropna().unique()
+        min_year, max_year = (int(all_years.min()), int(all_years.max())) if len(all_years) > 0 else (None, None)
+        year = request.args.get('year', default=max_year, type=int)
+        df = df_full[df_full['Rok']==year]
+
     except Exception as e:
-        return render_template('analiza.html', typ=typ, branches=[], branch='', months_order=[], suma_row_list=[], kontrahenci_sorted=[], pivot={}, sort_by='', sort_order='desc', error=str(e))
+        return render_template('analiza.html', typ=typ, branches=[], branch='', months_order=[], suma_row_list=[], kontrahenci_sorted=[], pivot={}, sort_by='', sort_order='desc',  current_year=None,min_year=None,max_year=None, error=str(e))
     if df.empty or 'Etykiety' not in df.columns:
-        return render_template('analiza.html', typ=typ, branches=[], branch='', months_order=[], suma_row_list=[], kontrahenci_sorted=[], pivot={}, sort_by='', sort_order='desc', error='Brak danych w pliku budżetu!')
+        return render_template('analiza.html', typ=typ, branches=[], branch='', months_order=[], suma_row_list=[], kontrahenci_sorted=[], pivot={}, sort_by='', sort_order='desc', current_year=None,min_year=None,max_year=None, error='Brak danych w pliku budżetu!')
     
     unique_branches = df.drop_duplicates(subset=['Etykiety_proc'])
     branches = unique_branches['Etykiety'].tolist()
@@ -210,6 +215,7 @@ def dashboard():
         suma_row_list = list(suma_row) + [suma_roczna]
         sort_by = request.args.get('sort_by', 'Suma roczna')
         sort_order = request.args.get('sort_order', 'desc')
+        rok = df['Rok']
         if sort_by == 'Kontrahent':
             kontrahenci_sorted = sorted(pt.index.tolist(), reverse=(sort_order=='desc'))
         elif sort_by in months_order + ['Suma roczna']:
@@ -226,23 +232,30 @@ def dashboard():
         kontrahenci_sorted=kontrahenci_sorted,
         pivot=pivot,
         sort_by=request.args.get('sort_by', 'Suma roczna'),
-        sort_order=request.args.get('sort_order', 'desc')
+        sort_order=request.args.get('sort_order', 'desc'),
+        current_year = year,
+        min_year=min_year,
+        max_year=max_year
     )
     return render_template('analiza.html', **html_args)
 
 @app.route('/analiza', methods=['GET'])
-@login_required
+#@login_required
 def analiza():
     typ = request.args.get('typ', 'Przychody')
     if not os.path.exists(EXCEL_PATH):
-        return render_template('analiza.html',  typ=typ, branches=[], branch='', months_order=[], suma_row_list=[], kontrahenci_sorted=[], pivot={}, sort_by='', sort_order='desc')
+        return render_template('analiza.html',  typ=typ, branches=[], branch='', months_order=[], suma_row_list=[], kontrahenci_sorted=[], pivot={}, sort_by='', current_year=None,min_year=None,max_year=None, sort_order='desc')
     try:
-        df = SHEETS_CACHE[typ].copy()
-        df = preprocess_data(df)
+        df_full = SHEETS_CACHE[typ].copy()
+        df_full = preprocess_data(df_full)        
+        all_years = df_full['Rok'].dropna().unique()
+        min_year, max_year = (int(all_years.min()), int(all_years.max())) if len(all_years) > 0 else (None, None)
+        year = request.args.get('year', default=max_year, type=int)
+        df = df_full[df_full['Rok']==year]
     except Exception as e:
-        return render_template('analiza.html', typ=typ, branches=[], branch='', months_order=[], suma_row_list=[], kontrahenci_sorted=[], pivot={}, sort_by='', sort_order='desc', error=str(e))
+        return render_template('analiza.html', typ=typ, branches=[], branch='', months_order=[], suma_row_list=[], kontrahenci_sorted=[], pivot={}, sort_by='', sort_order='desc', current_year=None,min_year=None,max_year=None, error=str(e))
     if df.empty or 'Etykiety' not in df.columns:
-        return render_template('analiza.html', typ=typ, branches=[], branch='', months_order=[], suma_row_list=[], kontrahenci_sorted=[], pivot={}, sort_by='', sort_order='desc', error='Brak danych w pliku budżetu!')
+        return render_template('analiza.html', typ=typ, branches=[], branch='', months_order=[], suma_row_list=[], kontrahenci_sorted=[], pivot={}, sort_by='', sort_order='desc', current_year=None,min_year=None,max_year=None, error='Brak danych w pliku budżetu!')
     
     unique_branches = df.drop_duplicates(subset=['Etykiety_proc'])
     branches = unique_branches['Etykiety'].tolist()
@@ -279,22 +292,34 @@ def analiza():
         kontrahenci_sorted=kontrahenci_sorted,
         pivot=pivot,
         sort_by=request.args.get('sort_by', 'Suma roczna'),
-        sort_order=request.args.get('sort_order', 'desc')
+        sort_order=request.args.get('sort_order', 'desc'),
+        current_year=year,
+        min_year=min_year,
+        max_year=max_year
     )
     return render_template('analiza.html', **html_args)
 
 @app.route('/podsumowanie', methods=['GET'])
-@login_required
+#@login_required
 def podsumowanie():
     if not os.path.exists(EXCEL_PATH):
-        return render_template('podsumowanie.html', summary_income=[], summary_expense=[])
+        return render_template('podsumowanie.html', summary_income=[], summary_expense=[], current_year=None,min_year=None,max_year=None)
     try:
-        df_income = SHEETS_CACHE['Przychody'].copy()
-        df_expense = SHEETS_CACHE['Wydatki'].copy()
-        df_income = preprocess_data(df_income)
-        df_expense = preprocess_data(df_expense)
+        df_income_full = SHEETS_CACHE['Przychody'].copy()
+        df_expense_full = SHEETS_CACHE['Wydatki'].copy()
+        df_income_full = preprocess_data(df_income_full)
+        df_expense_full = preprocess_data(df_expense_full)
+        all_years = pd.concat([df_income_full['Rok'], df_expense_full['Rok']]).dropna().unique()
+        min_year, max_year = (int(all_years.min()), int(all_years.max())) if len(all_years) > 0 else (None, None)
+        year = request.args.get('year', default=max_year, type=int)
+        df_income = df_income_full[df_income_full['Rok']==year]
+        df_expense = df_expense_full[df_expense_full['Rok'] == year]
     except Exception as e:
-        return render_template('podsumowanie.html', summary_income=[], summary_expense=[], error=str(e))
+        return render_template('podsumowanie.html', summary_income=[], summary_expense=[], current_year=None,min_year=None,max_year=None, error=str(e))
+    #all branches
+    all_branches_income = df_income['Etykiety'].dropna().unique()
+    all_branches_expense = df_expense['Etykiety'].dropna().unique()
+
     # Sumy przychodów wg gałęzi
     summary_income = df_income.groupby('Etykiety')['Kwota netto'].sum().reset_index()
     summary_income['Etykieta_org'] = summary_income['Etykiety']
@@ -312,32 +337,56 @@ def podsumowanie():
     pivot_expense['Suma roczna'] = pivot_expense.sum(axis=1)
     pivot_expense_dict = {row: [pivot_expense.loc[row, m] for m in months_order] + [pivot_expense.loc[row, 'Suma roczna']] for row in pivot_expense.index}
     # Sumy przychodów wg miesięcy
-    summary_income_month = df_income.groupby('Miesiąc')['Kwota netto'].sum().reindex(months_order, fill_value=0).reset_index()
+    #summary_income_month = df_income.groupby('Miesiąc')['Kwota netto'].sum().reindex(months_order, fill_value=0).reset_index()
+    income_chart_data = df_income[['Miesiąc','Kwota netto','Etykiety']].to_dict(orient='records')
+    expense_chart_data = df_expense[['Miesiąc','Kwota netto','Etykiety']].to_dict(orient='records')
     # Sumy wydatków wg miesięcy
-    summary_expense_month = df_expense.groupby('Miesiąc')['Kwota netto'].sum().reindex(months_order, fill_value=0).reset_index()
+    #summary_expense_month = df_expense.groupby('Miesiąc')['Kwota netto'].sum().reindex(months_order, fill_value=0).reset_index()
+    #branch sums
+    income_branch_sums = pivot_income['Suma roczna'].to_dict()
+    expense_branch_sums = pivot_expense['Suma roczna'].to_dict()
+    #json 
+    json_safe_pivot_income = {k: [float(v) for v in val_list] for k, val_list in pivot_income_dict.items()}
+    json_safe_pivot_expense = {k: [float(v) for v in val_list] for k, val_list in pivot_expense_dict.items()}
+    json_safe_income_sums = {k: float(v) for k, v in income_branch_sums.items()}
+    json_safe_expense_sums = {k: float(v) for k, v in expense_branch_sums.items()}
     return render_template(
         'podsumowanie.html',
-        summary_income=summary_income,
-        summary_expense=summary_expense,
-        summary_income_month=summary_income_month,
-        summary_expense_month=summary_expense_month,
+        income_chart_data=income_chart_data,
+        expense_chart_data=expense_chart_data,
         months_order=months_order,
-        pivot_income=pivot_income_dict,
-        pivot_expense=pivot_expense_dict,
+        pivot_income=json_safe_pivot_income,
+        pivot_expense=json_safe_pivot_expense,
+        current_year=year,
+        min_year=min_year,
+        max_year=max_year,
+        branches_income=all_branches_income,
+        branches_expense=all_branches_expense,
+        income_branch_sums=income_branch_sums,
+        expense_branch_sums=expense_branch_sums
     )
 
 @app.route('/wynagrodzenia', methods=['GET'])
-@login_required
+#@login_required
 def wynagrodzenia():
     # Zawsze używaj arkusza 'Wydatki', ignoruj parametr 'typ'
     if not os.path.exists(EXCEL_PATH):
-        return render_template('wynagrodzenia.html', wynagrodzenia_podzial={}, suma_wyplat=0)
+        return render_template('wynagrodzenia.html', wynagrodzenia_podzial={}, suma_wyplat=0, current_year=None,min_year=None,max_year=None)
     try:
-        df_wyd = SHEETS_CACHE['Wydatki'].copy()
+        df_full = SHEETS_CACHE['Wydatki'].copy()
+        df_full = preprocess_data(df_full)
+        #filtrowanie
+        df_full_wyn = df_full[df_full['Etykiety'].str.strip().str.upper()=='WYPŁATY'].copy()
+        if df_full_wyn.empty:
+            return render_template('wynagrodzenia.html', wynagrodzenia_podzial={}, suma_wyplat=0, error="Brak jakichkolwiek danych o wynagrodzeniach.", current_year=None,min_year=None,max_year=None)
+        all_years = df_full['Rok'].dropna().unique()
+        min_year, max_year = (int(all_years.min()), int(all_years.max())) if len(all_years)>0 else (None,None)
+        year=request.args.get("year", default=max_year, type=int)
+        df_wyd = df_full[df_full['Rok']==year]
     except Exception as e:
-        return render_template('wynagrodzenia.html', wynagrodzenia_podzial={}, suma_wyplat=0, error=str(e))
+        return render_template('wynagrodzenia.html', wynagrodzenia_podzial={}, suma_wyplat=0,  current_year=None,min_year=None,max_year=None, error=str(e))
     if df_wyd.empty or 'Etykiety' not in df_wyd.columns or 'Kwota netto' not in df_wyd.columns or 'Kontrahent' not in df_wyd.columns:
-        return render_template('wynagrodzenia.html', wynagrodzenia_podzial={}, suma_wyplat=0, error='Brak danych w arkuszu Wydatki!')
+        return render_template('wynagrodzenia.html', wynagrodzenia_podzial={}, suma_wyplat=0, current_year=None,min_year=None,max_year=None, error='Brak danych w arkuszu Wydatki!')
     df_wyd['Etykiety_proc'] = df_wyd['Etykiety'].str.strip().str.upper()
     df_wyd['Kwota netto'] = pd.to_numeric(df_wyd['Kwota netto'], errors='coerce').fillna(0)
     # Filtrowanie tylko wynagrodzeń
@@ -350,27 +399,35 @@ def wynagrodzenia():
     pivot = pivot.reindex(columns=months_order_local, fill_value=0)
     pivot['Suma roczna'] = pivot.sum(axis=1)
     wynagrodzenia_podzial = {osoba: [pivot.loc[osoba, m] for m in months_order_local] + [pivot.loc[osoba, 'Suma roczna']] for osoba in pivot.index}
+
     suma_wyplat = df_wyn['Kwota netto'].sum()
     return render_template(
         'wynagrodzenia.html',
         wynagrodzenia_podzial=wynagrodzenia_podzial,
         suma_wyplat=suma_wyplat,
-        months_order=months_order_local
+        months_order=months_order_local,
+        current_year=year,
+        min_year=min_year,
+        max_year=max_year
     )
 
 #dokumenty -> widok całej tabeli do edycji rekordów
 @app.route('/dokumenty', methods=['GET'])
-@login_required
+#@login_required
 def dokumenty():
     typ = request.args.get('typ', 'Przychody')
     if not os.path.exists(EXCEL_PATH):
-        return render_template('dokumenty.html', rows=[], typ=typ, branch='', branches=[], error='Brak pliku Excel.')
-    
+        return render_template('dokumenty.html', rows=[], typ=typ, branch='', branches=[],current_year=None, min_year=None, max_year=None, error='Brak pliku Excel.')
     try:
-        df = pd.read_excel(EXCEL_PATH, sheet_name=typ)
-        df=preprocess_data(df)
+        df_full = pd.read_excel(EXCEL_PATH, sheet_name=typ)
+        df_full =preprocess_data(df_full)
+        all_years = df_full['Rok'].dropna().unique()
+        min_year, max_year = (int(all_years.min()), int(all_years.max())) if len(all_years)>0 else (None,None)
+        year=request.args.get("year", default=max_year, type=int)
+        df = df_full[df_full['Rok']==year]        
+        #df=df_full
     except Exception as e:
-        return render_template('dokumenty.html', rows=[], typ=typ, branch='', branches=[], error=str(e))
+        return render_template('dokumenty.html', rows=[], typ=typ, branch='', branches=[],current_year=None, min_year=None, max_year=None, error=str(e))
     
     unique_branches = df[['Etykiety', 'Etykiety_proc']].drop_duplicates()
     branches = unique_branches['Etykiety'].tolist()
@@ -393,17 +450,17 @@ def dokumenty():
     #filtered_df = df[df['Etykiety_proc'] == branch_proc] if branch_proc else df
     
     # Poprawiona lista kolumn do usunięcia
-    cols_to_drop = ['Etykiety_proc', 'Miesiąc', 'Zaplacono', 'Pozostalo']
+    cols_to_drop = ['Etykiety_proc', 'Miesiąc', 'Zaplacono', 'Pozostalo', 'Rok']
     # Upewnij się, że usuwamy tylko istniejące kolumny
     existing_cols_to_drop = [col for col in cols_to_drop if col in filtered_df.columns]
     filtered_df2 = filtered_df.drop(columns=existing_cols_to_drop, errors='ignore')
     
     rows = filtered_df2.to_dict(orient='records')
 
-    return render_template('dokumenty.html', rows=rows, typ=typ, branch=branch_org, branches=branches)
+    return render_template('dokumenty.html', rows=rows, typ=typ, branch=branch_org, branches=branches, min_year=min_year, max_year=max_year,current_year=year)
 
 @app.route('/importExcel', methods = ['POST'])
-@login_required
+#@login_required
 def importExcel():
     file = request.files.get('file')
     if not file:
@@ -448,6 +505,10 @@ def importExcel():
     return redirect(url_for('dokumenty'))
 
 def merge_data(old_df, new_df, keys):
+    if old_df.empty:
+        new_df_copy = new_df.copy()
+        new_df_copy['Lp.'] = range(1, len(new_df_copy)+1)
+        return new_df_copy
     # normalizacja kluczy aby były takie same
     for k in keys:
         old_df[k] = old_df[k].astype(str).str.strip().str.upper()
@@ -490,7 +551,7 @@ def merge_data(old_df, new_df, keys):
 
 #edycja rekordu
 @app.route('/zapisz', methods=['POST'])
-@login_required
+#@login_required
 def zapisz():
     #wczytanie wszystkich danych do dataframeow
     all_sheets = {name: df.copy() for name, df in SHEETS_CACHE.items()}
@@ -560,7 +621,7 @@ def zapisz():
     return 'Zapisano', 200
 
 @app.route('/addRecord', methods=['POST'])
-@login_required
+#@login_required
 def addRecord():
     sheetType = request.form.get("typ")
     if not sheetType or sheetType not in SHEETS_CACHE:
@@ -605,7 +666,7 @@ def addRecord():
     return {"status": "ok", "added": clean_record}
 
 @app.route('/deleteRecord', methods=['POST'])
-@login_required
+#@login_required
 def deleteRecord():
     data = request.get_json()
     typ = data.get('typ')
@@ -633,7 +694,7 @@ def deleteRecord():
         return {"status": "Error", "message": f"Błąd podczas usuwania rekordu: {e}"}, 500
 
 @app.route('/truncateTable', methods=['POST'])
-@login_required
+#@login_required
 def truncateTable():
     data = request.get_json()
     typ = data.get("typ")
@@ -662,7 +723,7 @@ def truncateTable():
         return {"status": "Error", "message": f"Błąd podczas czyszczenia arkusza: {e}"}, 500
     
 @app.route('/downloadExcel')
-@login_required
+#@login_required
 def downloadExcel():
     return send_file(EXCEL_PATH, as_attachment=True)
 

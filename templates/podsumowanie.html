@@ -3,14 +3,28 @@
 <head>
     <title>Podsumowanie budżetu</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="/static/global.css">
+    <link rel="stylesheet" href="{{url_for('static',filename='global.css')}}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='summary.css')}}">
 </head>
-<body>
+<body data-months-order='{{ months_order|tojson }}'>
     {% include 'navbar.html' %}
     <h1>Podsumowanie budżetu</h1>
     {% if error %}
     <div style="color:red;text-align:center;font-size:1.2rem;margin:16px 0;">{{ error }}</div>
     {% endif %}
+    <div class="year-nav">
+        {% if min_year is not none and current_year > min_year %}
+            <a href="{{url_for('podsumowanie',year=current_year-1)}}">&lt; Poprzedni rok</a>
+        {% else %}
+            <span>&lt; Poprzedni rok</span>
+        {% endif %}
+        <span class="current-year">{{ current_year}}</span>
+        {% if max_year is not none and current_year < max_year %}
+            <a href="{{url_for('podsumowanie', year=current_year+1)}}">Następny rok &gt;</a>
+        {%else%}
+            <span>Następny rok &gt;</span>
+        {% endif%}
+    </div>
     <h2>Sumy przychodów wg gałęzi i miesięcy</h2>
     <div class="table-scroll">
     <table>
@@ -59,6 +73,60 @@
         {% endif %}
     </table>
     </div>
+    <div class="year-charts">
+        <div class="label-and-select-container">
+            <label for="income-chart-select">Filtruj przychody po wszystkich gałęziach</label>
+            <select id="income-chart-select">
+                <option value="all" selected>WSZYSTKIE</option>
+                {%for b in branches_income%}
+                    <option>{{b}}</option>
+                {%endfor%}
+            </select>
+        </div>
+        <div class="year-chart-income-container">
+            <div class="canvas-wrapper">
+                <script id="chart-data" type="application/json">
+                    {{income_chart_data|tojson}}
+                </script>
+                <canvas id="income-trend-chart"></canvas>
+            </div>
+            <div class="canvas-wrapper">
+                <script id="income-branch-chart-scr" type="application/json">
+                    {{income_branch_sums|tojson}}
+                </script>
+                <canvas id="income-branch-chart"></canvas>
+            </div>
+        </div>
+        <div class="label-and-select-container">
+            <label for="expense-chart-select">Filtruj wydatki po wszystkich gałęziach</label>
+            <select id="expense-chart-select">
+                <option value="all" selected>WSZYSTKIE</option>
+                {%for b in branches_expense%}
+                    <option>{{b}}</option>
+                {%endfor%}
+            </select>
+        </div>        
+        <div class="year-chart-expense-container">
+            <div class="canvas-wrapper">
+                <script id="chart-data-expense" type="application/json">
+                    {{expense_chart_data|tojson}}
+                </script>
+                <canvas id="expense-trend-chart"></canvas>
+            </div>
+            <div class="canvas-wrapper">
+                <script id="expense-branch-chart-scr" type="application/json">
+                    {{expense_branch_sums|tojson}}
+                </script>
+                <canvas id="expense-branch-chart"></canvas>
+            </div>    
+        </div>
+
+    </div>
+
+
     {% include 'footer.html' %}
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="{{url_for('static',filename='logic/summary.js')}}"></script>
 </body>
 </html>
