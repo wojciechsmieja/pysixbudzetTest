@@ -88,6 +88,9 @@
                 <script id="chart-data" type="application/json">
                     {{income_chart_data|tojson}}
                 </script>
+                <script id="chart-data-last-year" type="application/json">
+                    {{income_chart_data_last_year|tojson}}
+                </script>
                 <canvas id="income-trend-chart"></canvas>
             </div>
             <div class="canvas-wrapper">
@@ -110,6 +113,9 @@
             <div class="canvas-wrapper">
                 <script id="chart-data-expense" type="application/json">
                     {{expense_chart_data|tojson}}
+                </script>
+                <script id="chart-data-expense-last-year" type="application/json">
+                    {{expense_chart_data_last_year|tojson}}
                 </script>
                 <canvas id="expense-trend-chart"></canvas>
             </div>

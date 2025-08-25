@@ -310,53 +310,76 @@ def podsumowanie():
         df_income_full = preprocess_data(df_income_full)
         df_expense_full = preprocess_data(df_expense_full)
         all_years = pd.concat([df_income_full['Rok'], df_expense_full['Rok']]).dropna().unique()
+        available_years = sorted(all_years)
         min_year, max_year = (int(all_years.min()), int(all_years.max())) if len(all_years) > 0 else (None, None)
         year = request.args.get('year', default=max_year, type=int)
         df_income = df_income_full[df_income_full['Rok']==year]
         df_expense = df_expense_full[df_expense_full['Rok'] == year]
+        
+        df_income_last_year = pd.DataFrame()
+        df_expense_last_year = pd.DataFrame()
+        if (year -1) in available_years:
+            df_income_last_year = df_income_full[df_income_full['Rok']==(year-1)]
+            df_expense_last_year = df_expense_full[df_expense_full['Rok']==(year-1)]
+
     except Exception as e:
         return render_template('podsumowanie.html', summary_income=[], summary_expense=[], current_year=None,min_year=None,max_year=None, error=str(e))
-    #all branches
+
+    # Pivot and filter months for charts
+    pivot_income_current = df_income.pivot_table(index='Etykiety', columns='Miesiąc', values='Kwota netto', aggfunc='sum', fill_value=0).reindex(columns=months_order, fill_value=0)
+    pivot_expense_current = df_expense.pivot_table(index='Etykiety', columns='Miesiąc', values='Kwota netto', aggfunc='sum', fill_value=0).reindex(columns=months_order, fill_value=0)
+    
+    pivot_income_last = pd.DataFrame()
+    if not df_income_last_year.empty:
+        pivot_income_last = df_income_last_year.pivot_table(index='Etykiety', columns='Miesiąc', values='Kwota netto', aggfunc='sum', fill_value=0).reindex(columns=months_order, fill_value=0)
+
+    pivot_expense_last = pd.DataFrame()
+    if not df_expense_last_year.empty:
+        pivot_expense_last = df_expense_last_year.pivot_table(index='Etykiety', columns='Miesiąc', values='Kwota netto', aggfunc='sum', fill_value=0).reindex(columns=months_order, fill_value=0)
+
+    # Determine months to show
+    months_to_show = set()
+    for pivot in [pivot_income_current, pivot_expense_current, pivot_income_last, pivot_expense_last]:
+        if not pivot.empty:
+            months_to_show.update(pivot.columns[pivot.sum() > 0])
+    
+    filtered_months = [m for m in months_order if m in months_to_show]
+
+    # Prepare chart data
+    def unpivot_to_chart_data(pivot, months):
+        if pivot.empty or not months:
+            return []
+        pivot = pivot[months]
+        return pivot.reset_index().melt(id_vars='Etykiety', var_name='Miesiąc', value_name='Kwota netto').to_dict(orient='records')
+
+    income_chart_data = unpivot_to_chart_data(pivot_income_current, filtered_months)
+    income_chart_data_last_year = unpivot_to_chart_data(pivot_income_last, filtered_months)
+    expense_chart_data = unpivot_to_chart_data(pivot_expense_current, filtered_months)
+    expense_chart_data_last_year = unpivot_to_chart_data(pivot_expense_last, filtered_months)
+
+    # Other data preparations
     all_branches_income = df_income['Etykiety'].dropna().unique()
     all_branches_expense = df_expense['Etykiety'].dropna().unique()
-
-    # Sumy przychodów wg gałęzi
-    summary_income = df_income.groupby('Etykiety')['Kwota netto'].sum().reset_index()
-    summary_income['Etykieta_org'] = summary_income['Etykiety']
-    # Sumy wydatków wg gałęzi
-    summary_expense = df_expense.groupby('Etykiety')['Kwota netto'].sum().reset_index()
-    summary_expense['Etykieta_org'] = summary_expense['Etykiety']
-    # Pivot: przychody wg gałęzi i miesięcy
-    pivot_income = df_income.pivot_table(index='Etykiety', columns='Miesiąc', values='Kwota netto', aggfunc='sum', fill_value=0)
-    pivot_income = pivot_income.reindex(columns=months_order, fill_value=0)
-    pivot_income['Suma roczna'] = pivot_income.sum(axis=1)
-    pivot_income_dict = {row: [pivot_income.loc[row, m] for m in months_order] + [pivot_income.loc[row, 'Suma roczna']] for row in pivot_income.index}
-    # Pivot: wydatki wg gałęzi i miesięcy
-    pivot_expense = df_expense.pivot_table(index='Etykiety', columns='Miesiąc', values='Kwota netto', aggfunc='sum', fill_value=0)
-    pivot_expense = pivot_expense.reindex(columns=months_order, fill_value=0)
-    pivot_expense['Suma roczna'] = pivot_expense.sum(axis=1)
-    pivot_expense_dict = {row: [pivot_expense.loc[row, m] for m in months_order] + [pivot_expense.loc[row, 'Suma roczna']] for row in pivot_expense.index}
-    # Sumy przychodów wg miesięcy
-    #summary_income_month = df_income.groupby('Miesiąc')['Kwota netto'].sum().reindex(months_order, fill_value=0).reset_index()
-    income_chart_data = df_income[['Miesiąc','Kwota netto','Etykiety']].to_dict(orient='records')
-    expense_chart_data = df_expense[['Miesiąc','Kwota netto','Etykiety']].to_dict(orient='records')
-    # Sumy wydatków wg miesięcy
-    #summary_expense_month = df_expense.groupby('Miesiąc')['Kwota netto'].sum().reindex(months_order, fill_value=0).reset_index()
-    #branch sums
-    income_branch_sums = pivot_income['Suma roczna'].to_dict()
-    expense_branch_sums = pivot_expense['Suma roczna'].to_dict()
-    #json 
+    pivot_income_full = df_income.pivot_table(index='Etykiety', columns='Miesiąc', values='Kwota netto', aggfunc='sum', fill_value=0).reindex(columns=months_order, fill_value=0)
+    pivot_income_full['Suma roczna'] = pivot_income_full.sum(axis=1)
+    pivot_income_dict = {row: [pivot_income_full.loc[row, m] for m in months_order] + [pivot_income_full.loc[row, 'Suma roczna']] for row in pivot_income_full.index}
+    pivot_expense_full = df_expense.pivot_table(index='Etykiety', columns='Miesiąc', values='Kwota netto', aggfunc='sum', fill_value=0).reindex(columns=months_order, fill_value=0)
+    pivot_expense_full['Suma roczna'] = pivot_expense_full.sum(axis=1)
+    pivot_expense_dict = {row: [pivot_expense_full.loc[row, m] for m in months_order] + [pivot_expense_full.loc[row, 'Suma roczna']] for row in pivot_expense_full.index}
+    income_branch_sums = pivot_income_full['Suma roczna'].to_dict()
+    expense_branch_sums = pivot_expense_full['Suma roczna'].to_dict()
     json_safe_pivot_income = {k: [float(v) for v in val_list] for k, val_list in pivot_income_dict.items()}
     json_safe_pivot_expense = {k: [float(v) for v in val_list] for k, val_list in pivot_expense_dict.items()}
-    json_safe_income_sums = {k: float(v) for k, v in income_branch_sums.items()}
-    json_safe_expense_sums = {k: float(v) for k, v in expense_branch_sums.items()}
+
     return render_template(
         'podsumowanie.html',
         income_chart_data=income_chart_data,
         expense_chart_data=expense_chart_data,
-        months_order=months_order,
+        months_order=filtered_months,
         pivot_income=json_safe_pivot_income,
         pivot_expense=json_safe_pivot_expense,
+        income_chart_data_last_year=income_chart_data_last_year,
+        expense_chart_data_last_year=expense_chart_data_last_year,
         current_year=year,
         min_year=min_year,
         max_year=max_year,
@@ -364,7 +387,7 @@ def podsumowanie():
         branches_expense=all_branches_expense,
         income_branch_sums=income_branch_sums,
         expense_branch_sums=expense_branch_sums
-    )
+    )        
 
 @app.route('/wynagrodzenia', methods=['GET'])
 #@login_required

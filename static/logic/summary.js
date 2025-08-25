@@ -1,52 +1,80 @@
 document.addEventListener("DOMContentLoaded", function () {
+    const yearFromSpan = document.querySelector(".current-year").textContent;
+    const year = parseInt(yearFromSpan);
+    const lastYear = year - 1;
     const monthsOrder = JSON.parse(document.body.dataset.monthsOrder);
-    // Pobierz dane z ukrytego <script> dla przychodow
+
+    // Pobierz dane z ukrytego <script>
     const rawData = document.getElementById("chart-data").textContent;
     const data = JSON.parse(rawData);
-    const filteredDataIncome = data
-        .filter(i => i['Kwota netto'] !== '' && i['Kwota netto'] !==0 && i['Kwota netto'] !== null && !isNaN(i['Kwota netto']));
-    //console.table(filteredDataIncome);
-    //dla wydatków
+    const filteredDataIncome = data;
+
     const rawDataExpense = document.getElementById("chart-data-expense").textContent;
     const dataExpense = JSON.parse(rawDataExpense);
-    const filteredDataExpense = dataExpense
-        .filter(i => i['Kwota netto'] !== '' && i['Kwota netto'] !== null && i['Kwota netto'] !==0 && !isNaN(i['Kwota netto']));
-    // Wyciągnij miesiące i wartości dla przychodów
+    const filteredDataExpense = dataExpense;
 
-    function getChartData(data, branch){
+    const rawDataExpenseLastYear = document.getElementById("chart-data-expense-last-year").textContent;
+    const DataExpenseLastYear = JSON.parse(rawDataExpenseLastYear);
+    const filteredDataExpenseLastYear = DataExpenseLastYear;
+
+    const rawDataIncomeLastYear = document.getElementById("chart-data-last-year").textContent;
+    const DataIncomeLastYear = JSON.parse(rawDataIncomeLastYear);
+    const filteredDataIncomeLastYear = DataIncomeLastYear;
+
+    function getChartData(data, branch) {
         const monthlyData = {};
-        data.forEach(item=>{
-            if(branch==='all' || item ["Etykiety"]===branch){
-                const month = item['Miesiąc'];
-                const value = parseFloat(item["Kwota netto"]) || 0;
-                monthlyData[month]=(monthlyData[month] ||0)+value;
-            }
+        monthsOrder.forEach(month => {
+            monthlyData[month] = 0;
         });
-        const labels = Object.keys(monthlyData).sort((a, b) => {
-            return monthsOrder.indexOf(a) - monthsOrder.indexOf(b);
-        });
-        const values = labels.map(m=>monthlyData[m]);
-        return{labels, values};
+        if (data) {
+            data.forEach(item => {
+                if (branch === 'all' || item["Etykiety"] === branch) {
+                    const month = item['Miesiąc'];
+                    const value = parseFloat(item["Kwota netto"]) || 0;
+                    if (monthlyData.hasOwnProperty(month)) {
+                        monthlyData[month] += value;
+                    }
+                }
+            });
+        }
+        const labels = monthsOrder;
+        const values = labels.map(m => monthlyData[m]);
+        return { labels, values };
     }
 
     const ctx = document.getElementById("income-trend-chart").getContext("2d");
     const ctxExpense = document.getElementById("expense-trend-chart").getContext("2d");
-    
-    function createChart(ctx, chartData, label, title) {
+
+    function createChart(ctx, chartData, chartDataLastYear, year, lastYear, title) {
+        const datasets = [{
+            label: year,
+            data: chartData.values,
+            borderColor: "rgba(37, 99, 235, 1)",
+            backgroundColor: "rgba(37, 99, 235, 0.2)",
+            fill: true,
+            tension: 0.2,
+            pointRadius: 6,
+            pointBackgroundColor: "rgba(37, 99, 235, 1)"
+        }];
+
+        if (chartDataLastYear) {
+            datasets.push({
+                label: lastYear,
+                data: chartDataLastYear.values,
+                borderColor: "rgba(87, 86, 86, 1)",
+                fill: false,
+                borderDash: [10, 5],
+                tension: 0.2,
+                pointRadius: 4,
+                pointBackgroundColor: "rgba(175, 175, 175, 1)"
+            });
+        }
+
         return new Chart(ctx, {
             type: "line",
             data: {
                 labels: chartData.labels,
-                datasets: [{
-                    label: label,
-                    data: chartData.values,
-                    borderColor: "rgba(37, 99, 235, 1)",
-                    backgroundColor: "rgba(37, 99, 235, 0.2)",
-                    fill: true,
-                    tension: 0.2,
-                    pointRadius: 4,
-                    pointBackgroundColor: "rgba(37, 99, 235, 1)"
-                }]
+                datasets: datasets
             },
             options: {
                 responsive: true,
@@ -58,7 +86,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     tooltip: {
                         callbacks: {
                             label: function (context) {
-                                return context.formattedValue + " zł";
+                                return context.formattedValue + "";
                             }
                         }
                     }
@@ -81,40 +109,52 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         });
     }
-    
+
     //initialize charts
     const incomeChartData = getChartData(filteredDataIncome, 'all');
-    const incomeChart = createChart(ctx, incomeChartData, "Przychody (zł)", "Trend przychodów w roku");
+    const incomeChartDataLastYear = filteredDataIncomeLastYear.length > 0 ? getChartData(filteredDataIncomeLastYear, 'all') : null;
+    const incomeChart = createChart(ctx, incomeChartData, incomeChartDataLastYear, year, lastYear, "Trend przychodów w roku (zł)");
 
     const expenseChartData = getChartData(filteredDataExpense, 'all');
-    const expenseChart = createChart(ctxExpense, expenseChartData, "Wydatki (zł)", "Trend wydatków w roku");
+    const expenseChartDataLastYear = filteredDataExpenseLastYear.length > 0 ? getChartData(filteredDataExpenseLastYear, 'all') : null;
+    const expenseChart = createChart(ctxExpense, expenseChartData, expenseChartDataLastYear, year, lastYear, "Trend wydatków w roku (zł)");
+
     const incomeSelect = document.getElementById("income-chart-select");
-    incomeSelect.addEventListener('change', (e)=>{
+    incomeSelect.addEventListener('change', (e) => {
         const selectedBranch = e.target.value;
         const newChartData = getChartData(filteredDataIncome, selectedBranch);
         incomeChart.data.labels = newChartData.labels;
         incomeChart.data.datasets[0].data = newChartData.values;
+        if (incomeChart.data.datasets[1]) {
+            const newIncomeChartDataLastYear = getChartData(filteredDataIncomeLastYear, selectedBranch);
+            incomeChart.data.datasets[1].data = newIncomeChartDataLastYear.values;
+        }
         incomeChart.update();
     });
+
     const expenseSelect = document.getElementById("expense-chart-select");
-    expenseSelect.addEventListener('change', (e)=>{
+    expenseSelect.addEventListener('change', (e) => {
         const selectedBranch = e.target.value;
         const newChartData = getChartData(filteredDataExpense, selectedBranch);
         expenseChart.data.labels = newChartData.labels;
         expenseChart.data.datasets[0].data = newChartData.values;
+        if (expenseChart.data.datasets[1]) {
+            const newChartDataLastYear = getChartData(filteredDataExpenseLastYear, selectedBranch);
+            expenseChart.data.datasets[1].data = newChartDataLastYear.values;
+        }
         expenseChart.update();
     });
+
     //SECOND LINE OF CHARTS
     // chart - branches
     const rawIncomeBranchSums = document.getElementById("income-branch-chart-scr").textContent;
     const incomeBranchSums = JSON.parse(rawIncomeBranchSums);
     const incomeBranchChart = document.getElementById("income-branch-chart").getContext('2d');
-    //console.table(incomeBranchSums);
-    //przetworzenie jsona
+    
     const prepareChartData = (data) => {
         const labels = Object.keys(data);
         const values = Object.values(data);
-        return {labels, values}
+        return { labels, values }
     };
     const incomeBranchChartData = prepareChartData(incomeBranchSums);
     new Chart(incomeBranchChart, {
@@ -126,13 +166,13 @@ document.addEventListener("DOMContentLoaded", function () {
                 data: incomeBranchChartData.values,
                 borderColor: "rgba(37, 99, 235, 1)",
                 backgroundColor: "rgba(37, 99, 235, 0.2)",
-                borderWidth:1
+                borderWidth: 1
             }]
         },
         options: {
             responsive: true,
             plugins: {
-                legend:{
+                legend: {
                     position: 'top',
                 },
                 title: {
@@ -157,11 +197,11 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         }
     });
+
     const rawExpenseBranchSums = document.getElementById("expense-branch-chart-scr").textContent;
     const expenseBranchSums = JSON.parse(rawExpenseBranchSums);
     const expenseBranchChart = document.getElementById("expense-branch-chart").getContext('2d');
-    //console.table(expenseBranchSums);
-    //przetworzenie jsona
+    
     const expenseBranchChartData = prepareChartData(expenseBranchSums);
     new Chart(expenseBranchChart, {
         type: "bar",
@@ -172,13 +212,13 @@ document.addEventListener("DOMContentLoaded", function () {
                 data: expenseBranchChartData.values,
                 borderColor: "rgba(37, 99, 235, 1)",
                 backgroundColor: "rgba(37, 99, 235, 0.2)",
-                borderWidth:1
+                borderWidth: 1
             }]
         },
         options: {
             responsive: true,
             plugins: {
-                legend:{
+                legend: {
                     position: 'top',
                 },
                 title: {
@@ -199,20 +239,11 @@ document.addEventListener("DOMContentLoaded", function () {
                         display: true,
                         text: "Gałęzie"
                     },
-                    ticks:{
-                        /*callback: function(value) {
-                            let label = this.getLabelForValue(value);
-                            return label.length > 8 ? label.substring(0, 8) + "…" : label;
-                        },*/
-                        maxRotation:15
+                    ticks: {
+                        maxRotation: 15
                     }
                 }
             }
         }
     });
-    //Years charts for specific branch   
-
-
 });
-
-

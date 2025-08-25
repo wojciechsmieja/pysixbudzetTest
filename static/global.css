@@ -78,6 +78,7 @@ table {
     color: #222;
     display: table;
     /*table-layout: fixed;*/
+    margin-bottom: 20px;
 }
 th, td {
     padding: 10px 8px;
