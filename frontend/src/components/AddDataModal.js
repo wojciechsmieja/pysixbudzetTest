@@ -1,33 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import './AddDataModal.css'; // Import the new CSS file
 
-const AddDataModal = ({ isOpen, onClose, onSubmit, dataType, initialData }) => {
-    const initialPrzychodyState = {
-        'Nr dokumentu': '',
-        'Kontrahent': '',
-        'Rodzaj': 'Faktura',
-        'Data wystawienia': new Date().toISOString().split('T')[0],
-        'Termin płatności': new Date().toISOString().split('T')[0],
-        'Zapłacono': 0,
-        'Pozostało': 0,
-        'Razem': 0,
-        'Kwota netto': 0,
-        'Metoda': 'przelew',
-        'Etykiety': '',
-    };
+const initialPrzychodyState = {
+    'Nr dokumentu': '',
+    'Kontrahent': '',
+    'Rodzaj': 'Faktura',
+    'Data wystawienia': new Date().toISOString().split('T')[0],
+    'Termin płatności': new Date().toISOString().split('T')[0],
+    'Zapłacono': 0,
+    'Pozostało': 0,
+    'Razem': 0,
+    'Kwota netto': 0,
+    'Metoda': 'przelew',
+    'Etykiety': '',
+};
+const initialWydatkiState = {
+    'Nr dokumentu': '',
+    'Kontrahent': '',
+    'Data wystawienia': new Date().toISOString().split('T')[0],
+    'Termin płatności': new Date().toISOString().split('T')[0],
+    'Zapłacono': 0,
+    'Pozostało': 0,
+    'Razem': 0,
+    'Kwota netto': 0,
+    'Kwota vat': 0,
+    'Etykiety': '',
+};
 
-    const initialWydatkiState = {
-        'Nr dokumentu': '',
-        'Kontrahent': '',
-        'Data wystawienia': new Date().toISOString().split('T')[0],
-        'Termin płatności': new Date().toISOString().split('T')[0],
-        'Zapłacono': 0,
-        'Pozostało': 0,
-        'Razem': 0,
-        'Kwota netto': 0,
-        'Kwota vat': 0,
-        'Etykiety': '',
-    };
+const AddDataModal = ({ isOpen, onClose, onSubmit, dataType, initialData }) => {
 
     const [formData, setFormData] = useState({});
 
