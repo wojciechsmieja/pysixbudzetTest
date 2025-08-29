@@ -6,14 +6,14 @@
 :root {
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   
-  --background: #ff0000; /* Deep, dark navy */
-  --surface-1: #00ff73; /* Cards, panels background */
-  --surface-2: #d0ff00; /* Hover states, secondary elements */
+  --background: #0B0F19; /* Deep, dark navy */
+  --surface-1: #191E2C; /* Cards, panels background */
+  --surface-2: #242938; /* Hover states, secondary elements */
   
-  --border-color: rgb(255, 255, 255);
+  --border-color: rgba(255, 255, 255, 0.1);
   
-  --text-primary: #000000; /* Almost white */
-  --text-secondary: #000000; /* Grey for secondary text */
+  --text-primary: #F9FAFB; /* Almost white */
+  --text-secondary: #9CA3AF; /* Grey for secondary text */
 
   /* Accent Colors for Glows & Highlights */
   --accent-blue: #38bdf8; /* sky-400 */
