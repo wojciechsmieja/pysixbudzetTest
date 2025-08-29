@@ -1,0 +1,64 @@
+/*
+ * Analiza.css - Dark Theme Layout
+ */
+
+.table-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    color: var(--text-primary);
+}
+
+.loading-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 1.2rem;
+    color: var(--text-secondary);
+    z-index: 20;
+}
+.filter-bar{
+    justify-content: center;
+}
+/* Toolbar & Search Input */
+.table-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom:1rem !important;
+}
+
+/* Reposition loading indicator on mobile */
+@media (max-width: 768px) {
+    .loading-overlay {
+        position: fixed; /* Position relative to the viewport */
+        top: 80px; /* Position it below the main navbar */
+        left: 50%;
+        transform: translateX(-50%); /* Center it horizontally */
+        background-color: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        width: auto;
+        height: auto;
+        /* Override absolute positioning */
+        font-size: 0.9rem;
+    }
+    .filter-chips-analysis{
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    .filter-chips-analysis .chip{
+        flex: 1 0 calc(50% - 0,5rem);
+        text-align: center;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 1rem;
+    }
+    .scroll-up{
+    display: flex;
+    justify-content: center;
+    }
+}

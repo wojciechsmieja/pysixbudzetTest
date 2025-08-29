@@ -1,0 +1,119 @@
+/*
+ * Podsumowanie.css - Dark Theme Layout
+ */
+
+.filter-bar-center {
+    justify-content: center;
+}
+
+.section-divider {
+    border: none;
+    border-top: 1px solid var(--border-color);
+    margin: 2rem 0;
+}
+
+.section-title {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    color: var(--text-primary);
+    padding-bottom: 0.5rem;
+    text-align: center;
+}
+.scroll-to-charts{
+display: flex;
+justify-content: center;
+}
+.charts-section {
+    margin-bottom: 2rem;
+    padding: 0 1rem;
+}
+
+.subsection-title {
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: var(--text-secondary);
+    text-align: center;
+}
+
+.chart-filter-bar {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.chart-filter-bar label {
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+
+
+.chart-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+    gap: 2rem;
+}
+
+.chart-wrapper {
+    height: 380px;
+    position: relative;
+    padding: 1.5rem;
+    background-color: var(--surface-1);
+    border: 1px solid var(--border-color);
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.chart-wrapper:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 12px rgba(0, 0, 0, 0.15);
+}
+.summary-table-wrapper{
+    border: 1px solid var(--border-color);
+    border-radius: 0.75rem;
+    overflow: auto;
+    background-color: var(--surface-1);
+}
+.summary-table-wrapper::-webkit-scrollbar-corner{
+    background-color: var(--background);
+}
+.summary-table{
+    min-width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+    font-family: var(--font-sans);
+    table-layout: auto;
+}
+
+
+@media (max-width: 768px) {
+    .page-wrapper {
+        padding: 1rem; /* Adjust overall page padding */
+        padding-left: 0.3rem !important;
+        padding-right: 0.3rem !important;
+    }
+    .charts-section {
+        padding-left: 0;
+        padding-right: 0;
+    }
+    .chart-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem; /* Add vertical gap between charts */
+    }
+    .chart-wrapper {
+        height: 300px;
+        /* Restore card appearance now that there's a gap */
+        border-radius: 0.75rem;
+        border: 1px solid var(--border-color);
+        padding: 1rem 1rem 1rem 0; /* Remove left padding */
+    }
+    .scroll-up{
+    display: flex;
+    justify-content: center;
+    }
+}

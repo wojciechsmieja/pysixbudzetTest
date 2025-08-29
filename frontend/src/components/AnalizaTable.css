@@ -1,0 +1,154 @@
+/*
+ * AnalizaTable.css - Dark Theme
+ */
+
+.analiza-table-wrapper {
+    border: 1px solid var(--border-color);
+    border-radius: 0.75rem;
+    overflow: auto;
+    background-color: var(--surface-1);
+}
+.analiza-table-wrapper::-webkit-scrollbar-corner{
+    background-color: var(--background);
+}
+
+.analiza-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+    font-family: var(--font-sans);
+    table-layout: auto;
+}
+
+.analiza-th, .analiza-td, .analiza-tf {
+    padding: 0.5rem 0.5rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+    border-right: 1px solid var(--border-color);
+    transition: background-color 0.2s ease;
+}
+
+.analiza-th:last-child, .analiza-td:last-child, .analiza-tf:last-child {
+    border-right: none;
+}
+
+.analiza-table thead tr:last-child th, .analiza-table tbody tr:last-child td, .analiza-table tfoot tr:last-child td {
+    border-bottom: none;
+}
+
+.analiza-th {
+    background-color: var(--surface-2);
+    color: var(--text-primary);
+    font-weight: 600;
+    text-align: center;
+    cursor: pointer;
+}
+
+.th-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+}
+
+.sort-indicator {
+    font-size: 0.7rem;
+}
+
+.sort-indicator-placeholder {
+    display: inline-block;
+    width: 0.7rem; 
+}
+
+.analiza-table tbody tr:nth-child(even) {
+    background-color: rgba(0,0,0,0.1);
+}
+
+.analiza-table tbody tr:hover {
+    background-color: var(--surface-2);
+}
+
+.td-kontrahent {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.td-total {
+    font-weight: 700;
+    color: var(--accent-blue);
+}
+
+.analiza-tf {
+    background-color: var(--surface-2);
+    font-weight: 700;
+    color: var(--text-primary);
+    border-top: 2px solid var(--border-color);
+}
+
+.text-right {
+    text-align: right;
+    font-family: var(--font-sans);
+}
+
+.column-hover {
+    background-color: rgba(53, 162, 235, 0.15) !important;
+}
+
+.analiza-table tbody tr:hover .column-hover {
+    background-color: rgba(53, 162, 235, 0.25) !important;
+}
+
+/* Responsive Card View for Mobile */
+@media (max-width: 768px) {
+    .analiza-table-wrapper {
+        border: none;
+        background-color: transparent;
+    }
+
+    .analiza-table thead {
+        display: none; /* Hide table header */
+    }
+
+    .analiza-table, .analiza-table tbody, .analiza-table tr {
+        display: block;
+        width: 100%;
+    }
+
+    .analiza-table tr {
+        background-color: var(--surface-1);
+        border: 1px solid var(--border-color);
+        border-radius: 0.75rem;
+        margin-bottom: 1rem;
+        padding: 0.5rem;
+    }
+    
+    .analiza-table tbody tr:nth-child(even) {
+        background-color: var(--surface-1); /* Override zebra striping */
+    }
+
+    .analiza-table td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid var(--border-color);
+        text-align: right;
+    }
+
+    .analiza-table td:last-child {
+        border-bottom: none;
+    }
+
+    .analiza-table td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: var(--text-primary);
+        text-align: left;
+        margin-right: 1rem;
+    }
+
+    /* Hide footer on mobile for simplicity */
+    .analiza-table tfoot {
+        display: none;
+    }
+}

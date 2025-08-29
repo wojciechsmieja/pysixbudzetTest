@@ -4,7 +4,19 @@ document.addEventListener("DOMContentLoaded", function () {
     const lastYear = year - 1;
     const monthsOrder = JSON.parse(document.body.dataset.monthsOrder);
 
-    // Pobierz dane z ukrytego <script>
+    // Helper function to generate modern colors
+    const generateModernColors = (numColors) => {
+        const colors = [
+            '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd',
+            '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'
+        ];
+        let result = [];
+        for (let i = 0; i < numColors; i++) {
+            result.push(colors[i % colors.length]);
+        }
+        return result;
+    };
+    
     const rawData = document.getElementById("chart-data").textContent;
     const data = JSON.parse(rawData);
     const filteredDataIncome = data;
@@ -46,27 +58,37 @@ document.addEventListener("DOMContentLoaded", function () {
     const ctxExpense = document.getElementById("expense-trend-chart").getContext("2d");
 
     function createChart(ctx, chartData, chartDataLastYear, year, lastYear, title) {
+        const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+        gradient.addColorStop(0, 'rgba(37, 99, 235, 0.5)');
+        gradient.addColorStop(1, 'rgba(37, 99, 235, 0)');
+
         const datasets = [{
             label: year,
             data: chartData.values,
-            borderColor: "rgba(37, 99, 235, 1)",
-            backgroundColor: "rgba(37, 99, 235, 0.2)",
+            borderColor: "#2563eb",
+            backgroundColor: gradient,
             fill: true,
-            tension: 0.2,
-            pointRadius: 6,
-            pointBackgroundColor: "rgba(37, 99, 235, 1)"
+            tension: 0.4,
+            pointRadius: 5,
+            pointBackgroundColor: "#2563eb",
+            pointBorderColor: '#fff',
+            pointHoverRadius: 7,
+            pointHoverBorderWidth: 2,
         }];
 
         if (chartDataLastYear) {
             datasets.push({
                 label: lastYear,
                 data: chartDataLastYear.values,
-                borderColor: "rgba(87, 86, 86, 1)",
+                borderColor: "#9ca3af",
                 fill: false,
-                borderDash: [10, 5],
-                tension: 0.2,
-                pointRadius: 4,
-                pointBackgroundColor: "rgba(175, 175, 175, 1)"
+                borderDash: [5, 5],
+                tension: 0.4,
+                pointRadius: 5,
+                pointBackgroundColor: "#9ca3af",
+                pointBorderColor: '#fff',
+                pointHoverRadius: 7,
+                pointHoverBorderWidth: 2,
             });
         }
 
@@ -78,15 +100,27 @@ document.addEventListener("DOMContentLoaded", function () {
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: false,
                 plugins: {
                     title: {
                         display: true,
-                        text: title
+                        text: title,
+                        font: { size: 18, weight: 'bold' }
                     },
                     tooltip: {
+                        enabled: true,
+                        mode: 'index',
+                        intersect: false,
+                        backgroundColor: '#fff',
+                        titleColor: '#333',
+                        bodyColor: '#666',
+                        borderColor: '#ddd',
+                        borderWidth: 1,
+                        padding: 10,
+                        cornerRadius: 8,
                         callbacks: {
                             label: function (context) {
-                                return context.formattedValue + "";
+                                return `${context.dataset.label}: ${context.formattedValue} zł`;
                             }
                         }
                     }
@@ -97,20 +131,29 @@ document.addEventListener("DOMContentLoaded", function () {
                         title: {
                             display: true,
                             text: "Kwota netto (zł)"
+                        },
+                        grid: {
+                            drawBorder: false,
                         }
                     },
                     x: {
                         title: {
                             display: true,
                             text: "Miesiąc"
+                        },
+                        grid: {
+                            display: false,
                         }
                     }
+                },
+                animation: {
+                    duration: 1000,
+                    easing: 'easeInOutQuart'
                 }
             }
         });
     }
 
-    //initialize charts
     const incomeChartData = getChartData(filteredDataIncome, 'all');
     const incomeChartDataLastYear = filteredDataIncomeLastYear.length > 0 ? getChartData(filteredDataIncomeLastYear, 'all') : null;
     const incomeChart = createChart(ctx, incomeChartData, incomeChartDataLastYear, year, lastYear, "Trend przychodów w roku (zł)");
@@ -145,40 +188,54 @@ document.addEventListener("DOMContentLoaded", function () {
         expenseChart.update();
     });
 
-    //SECOND LINE OF CHARTS
-    // chart - branches
     const rawIncomeBranchSums = document.getElementById("income-branch-chart-scr").textContent;
     const incomeBranchSums = JSON.parse(rawIncomeBranchSums);
-    const incomeBranchChart = document.getElementById("income-branch-chart").getContext('2d');
+    const incomeBranchChartCtx = document.getElementById("income-branch-chart").getContext('2d');
     
     const prepareChartData = (data) => {
         const labels = Object.keys(data);
         const values = Object.values(data);
         return { labels, values }
     };
+
     const incomeBranchChartData = prepareChartData(incomeBranchSums);
-    new Chart(incomeBranchChart, {
+    const incomeColors = generateModernColors(incomeBranchChartData.labels.length);
+
+    new Chart(incomeBranchChartCtx, {
         type: "bar",
         data: {
             labels: incomeBranchChartData.labels,
             datasets: [{
                 label: "Suma roczna",
                 data: incomeBranchChartData.values,
-                borderColor: "rgba(37, 99, 235, 1)",
-                backgroundColor: "rgba(37, 99, 235, 0.2)",
-                borderWidth: 1
+                backgroundColor: incomeColors.map(color => `${color}B3`), // Add alpha for transparency
+                borderColor: incomeColors,
+                borderWidth: 1,
+                borderRadius: 5,
             }]
         },
         options: {
             responsive: true,
+            maintainAspectRatio: false,
             plugins: {
                 legend: {
-                    position: 'top',
+                    display: false
                 },
                 title: {
                     display: true,
-                    text: "Roczne sumy przychodów z poszczególnych gałęzi"
+                    text: "Roczne sumy przychodów z poszczególnych gałęzi",
+                    font: { size: 18, weight: 'bold' }
                 },
+                tooltip: {
+                    enabled: true,
+                    backgroundColor: '#fff',
+                    titleColor: '#333',
+                    bodyColor: '#666',
+                    borderColor: '#ddd',
+                    borderWidth: 1,
+                    padding: 10,
+                    cornerRadius: 8,
+                }
             },
             scales: {
                 y: {
@@ -186,45 +243,66 @@ document.addEventListener("DOMContentLoaded", function () {
                     title: {
                         display: true,
                         text: "Suma (zł)"
+                    },
+                    grid: {
+                        drawBorder: false,
                     }
                 },
                 x: {
-                    title: {
-                        display: true,
-                        text: "Gałęzie"
+                    grid: {
+                        display: false,
                     }
                 }
+            },
+            animation: {
+                duration: 1000,
+                easing: 'easeInOutQuart'
             }
         }
     });
 
     const rawExpenseBranchSums = document.getElementById("expense-branch-chart-scr").textContent;
     const expenseBranchSums = JSON.parse(rawExpenseBranchSums);
-    const expenseBranchChart = document.getElementById("expense-branch-chart").getContext('2d');
+    const expenseBranchChartCtx = document.getElementById("expense-branch-chart").getContext('2d');
     
     const expenseBranchChartData = prepareChartData(expenseBranchSums);
-    new Chart(expenseBranchChart, {
+    const expenseColors = generateModernColors(expenseBranchChartData.labels.length);
+
+    new Chart(expenseBranchChartCtx, {
         type: "bar",
         data: {
             labels: expenseBranchChartData.labels,
             datasets: [{
                 label: "Suma roczna",
                 data: expenseBranchChartData.values,
-                borderColor: "rgba(37, 99, 235, 1)",
-                backgroundColor: "rgba(37, 99, 235, 0.2)",
-                borderWidth: 1
+                backgroundColor: expenseColors.map(color => `${color}B3`),
+                borderColor: expenseColors,
+                borderWidth: 1,
+                borderRadius: 5,
             }]
         },
         options: {
             responsive: true,
+            maintainAspectRatio: false,
             plugins: {
                 legend: {
-                    position: 'top',
+                    display: false
                 },
                 title: {
                     display: true,
-                    text: "Roczne sumy wydatków na poszczególne gałęzie"
+                    text: "Roczne sumy wydatków na poszczególne gałęzie",
+                    font: { size: 18, weight: 'bold' }
                 },
+                 tooltip: {
+                    enabled: true,
+                    backgroundColor: '#fff',
+                    titleColor: '#333',
+                    bodyColor: '#666',
+                    borderColor: '#ddd',
+                    borderWidth: 1,
+                    padding: 10,
+                    cornerRadius: 8,
+                }
             },
             scales: {
                 y: {
@@ -232,17 +310,20 @@ document.addEventListener("DOMContentLoaded", function () {
                     title: {
                         display: true,
                         text: "Suma (zł)"
+                    },
+                    grid: {
+                        drawBorder: false,
                     }
                 },
                 x: {
-                    title: {
-                        display: true,
-                        text: "Gałęzie"
-                    },
-                    ticks: {
-                        maxRotation: 15
+                    grid: {
+                        display: false,
                     }
                 }
+            },
+             animation: {
+                duration: 1000,
+                easing: 'easeInOutQuart'
             }
         }
     });

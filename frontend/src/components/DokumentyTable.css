@@ -1,0 +1,322 @@
+/*
+ * DokumentyTable.css - Dark Theme
+ */
+
+.dokumenty-table-container {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+/* Toolbar & Search Input */
+.documents-table-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 0;
+}
+
+.search-input {
+    padding: 0.6rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    font-size: 0.9rem;
+    min-width: 300px;
+    background-color: var(--surface-1);
+    color: var(--text-primary);
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.search-input::placeholder {
+    color: var(--text-secondary);
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+}
+
+/* Table Wrapper for Scrolling */
+.table-wrapper {
+    max-height: 70vh;
+    overflow-y: auto;
+    overflow-x: auto;
+    border: 1px solid var(--border-color);
+    border-radius: 0.75rem; /* More rounded corners */
+    background-color: var(--surface-1);
+}
+.table-wrapper::-webkit-scrollbar-corner{
+    background-color: var(--background);
+}
+
+/* Main Table Styling */
+.dokumenty-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+.dokumenty-table th,
+.dokumenty-table td {
+    padding: 0.8rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+/* Sticky Header */
+.dokumenty-table .table-header-sticky th {
+    position: sticky;
+    top: 0;
+    background-color: var(--surface-2); /* Lighter gray header */
+    color: var(--text-primary);
+    font-weight: 600;
+    z-index: 10;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.dokumenty-table .table-header-sticky th:hover {
+    background-color: #343a4a;
+}
+
+.sort-icon {
+    opacity: 0.6;
+    margin-left: 4px;
+}
+
+/* Row Styling - Zebra Striping */
+.dokumenty-table tbody tr {
+    transition: background-color 0.15s ease-in-out;
+}
+
+.dokumenty-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.dokumenty-table tbody tr:nth-child(even) {
+    background-color: rgba(0,0,0,0.1);
+}
+
+.dokumenty-table tbody tr:hover {
+    background-color: var(--surface-2);
+}
+
+/* Expander & Actions */
+.expander-button, .action-icon-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 50%;
+    color: var(--text-secondary);
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.expander-button:hover, .action-icon-button:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+.actions-cell {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* Expanded Row */
+.expanded-row td {
+    padding: 0 !important;
+    background-color: var(--background) !important; /* Match page background */
+}
+
+.expanded-row .dokument-card {
+    border: 1px solid var(--accent-blue);
+    box-shadow: none;
+    margin: 1rem;
+    background-color: var(--surface-1);
+}
+
+/* Currency & Tag Styling */
+.currency-netto { color: #22c55e; } /* green-500 */
+.currency-razem { color: #3b82f6; } /* blue-500 */
+.currency-pozostalo-due { color: #ef4444; font-weight: 600; } /* red-500 */
+
+.tags-cell {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    max-width: 250px; /* Prevent excessive width */
+    white-space: normal;
+}
+
+.tag-chip {
+    padding: 0.2rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    background-color: var(--surface-2);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+}
+
+/* Pagination */
+.lp-column {
+    opacity: 0;
+    width: 0;
+    padding: 0;
+    border: none;
+    font-size: 0; /* Hide text content completely */
+}
+
+.pagination-controls {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 0.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.pagination-controls button,
+.pagination-controls select {
+    padding: 0.5rem 0.75rem;
+    margin: 0 2px;
+    border: 1px solid var(--border-color);
+    border-radius: 0.375rem;
+    background-color: var(--surface-1);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.pagination-controls button:hover:not(:disabled) {
+    background-color: var(--surface-2);
+}
+
+.pagination-controls button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.pagination-controls .page-info {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+/* Responsive Card View for Mobile */
+@media (max-width: 768px) {
+    .dokumenty-table-container {
+        gap: 0; /* Remove gap for a tighter mobile layout */
+    }
+
+    .table-wrapper {
+        border: none;
+        max-height: none; /* Allow it to grow */
+        overflow-y: visible;
+        background-color: transparent;
+    }
+
+    .dokumenty-table thead {
+        display: none; /* Hide table header */
+    }
+
+    .dokumenty-table, .dokumenty-table tbody, .dokumenty-table tr {
+        display: block;
+        width: 100%;
+    }
+
+    .dokumenty-table tr {
+        background-color: var(--surface-1);
+        border: 1px solid var(--border-color);
+        border-radius: 0.75rem;
+        margin-bottom: 1rem;
+        padding: 0.5rem;
+    }
+    
+    .dokumenty-table tbody tr:nth-child(even) {
+        background-color: var(--surface-1); /* Override zebra striping */
+    }
+
+    .dokumenty-table td {
+        display: flex; /* Use flex for alignment */
+        justify-content: space-between; /* Align label and value */
+        align-items: center;
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid var(--border-color);
+        text-align: right;
+    }
+
+    .dokumenty-table td:last-child {
+        border-bottom: none;
+    }
+
+    .dokumenty-table td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: var(--text-primary);
+        text-align: left;
+        margin-right: 1rem; /* Space between label and value */
+    }
+
+    /* Hide expander column and functionality on mobile */
+    .dokumenty-table td[data-label=""] { /* Targets expander cell */
+        display: none;
+    }
+    
+    .expanded-row {
+        display: none !important; /* Ensure expanded content is hidden */
+    }
+
+    /* Adjust specific cells for better mobile view */
+    .tags-cell {
+        justify-content: flex-end;
+        max-width: 100%;
+        white-space: normal;
+    }
+
+    .actions-cell {
+        padding: 0.75rem 0.5rem;
+        justify-content: flex-end; /* Align buttons to the right */
+        gap: 0.75rem;
+    }
+    
+    .dokumenty-table td[data-label="Akcje"] {
+        justify-content: center; /* Center the action buttons */
+        padding-top: 1rem;
+    }
+
+    .dokumenty-table td[data-label="Akcje"]::before {
+        display: none; /* Hide "Akcje:" label for a cleaner look */
+    }
+
+    .pagination-controls {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .pagination-nav {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        flex-wrap: nowrap; /* Ensure items stay in one line */
+        gap: 0.25rem; /* Reduce gap to save space */
+        width: 100%;
+    }
+
+    .pagination-nav .page-info {
+        flex-shrink: 1; /* Allow text to shrink */
+        white-space: nowrap;
+        min-width: 80px;
+        text-align: center;
+
+        font-size: 0.8rem;
+    }
+
+    .pagination-nav button {
+        flex-shrink: 0; /* Do not shrink buttons, let the text shrink */
+        padding: 0.4rem 0.5rem; /* Reduce padding on buttons to save space */
+    }
+    .documents-table-toolbar{
+        margin-bottom: 0.8rem;
+    }
+}

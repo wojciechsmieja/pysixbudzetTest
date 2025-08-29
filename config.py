@@ -13,4 +13,8 @@ class Config:
         "pool_recycle":280
     }
     PERMANENT_SESSION_LIFETIME = timedelta(minutes=30)
+    # Added to solve refresh logout issue
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SECURE = False # For local development (HTTP). Set to True in production (HTTPS).
+    SESSION_COOKIE_SAMESITE = 'Lax'
 

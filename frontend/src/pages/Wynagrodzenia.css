@@ -1,0 +1,183 @@
+/*
+ * Wynagrodzenia.css - Dark Theme Layout
+ */
+
+.filter-bar-center {
+    justify-content: center;
+}
+/* 
+  This file is intentionally sparse.
+  It assumes that common layout classes like .page-wrapper, .page-header, 
+  .filter-bar, .filter-group, and .chip are defined in a global stylesheet 
+  like Dokumenty.css or index.css to ensure consistency.
+*/
+
+@media(max-width:768px){
+  .scroll-up{
+    display: block;
+  }
+}
+
+.wynagrodzenia-page-wrapper {
+    padding: 1rem;
+    max-width: 100%;
+    margin: 0 auto;
+}
+
+.wynagrodzenia-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.wynagrodzenia-header h1 {
+    font-size: 1.5rem;
+    color: var(--text-primary);
+}
+
+.filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding: 1rem;
+    background-color: var(--surface-1);
+    border-radius: 0.75rem;
+    margin-bottom: 1rem;
+    border: 1px solid var(--border-color);
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.filter-group label {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.filter-group select,
+.filter-group input {
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--border-color);
+    background-color: var(--surface-2);
+    color: var(--text-primary);
+    font-size: 0.875rem;
+}
+
+.filter-group select:focus,
+.filter-group input:focus {
+    outline: none;
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+}
+
+.selected-filters-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 1rem;
+    min-height: 2.5rem; /* Prevents layout shift */
+}
+
+.chip {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background-color: var(--surface-2);
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-size: 0.8rem;
+    border: 1px solid var(--border-color);
+}
+
+.chip-remove {
+    cursor: pointer;
+    color: var(--text-secondary);
+    transition: color 0.2s;
+}
+
+.chip-remove:hover {
+    color: var(--text-primary);
+}
+
+.clear-filters-btn {
+    background: none;
+    border: none;
+    color: var(--accent-blue);
+    cursor: pointer;
+    font-size: 0.8rem;
+    margin-left: 0.5rem;
+}
+
+.clear-filters-btn:hover {
+    text-decoration: underline;
+}
+
+.totals-bar {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.total-card {
+    background-color: var(--surface-1);
+    padding: 1rem;
+    border-radius: 0.75rem;
+    border: 1px solid var(--border-color);
+    text-align: center;
+}
+
+.total-card-title {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.total-card-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.total-card-value.positive {
+    color: var(--accent-green);
+}
+
+.total-card-value.negative {
+    color: var(--accent-purple);
+}
+
+.loading-container,
+.error-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem;
+    color: var(--text-secondary);
+}
+@media (max-width: 1300px) {
+    .wynagrodzenia-table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+}
+@media (max-width: 768px) {
+    .filter-bar {
+        flex-direction: column;
+    }
+    .totals-bar {
+        grid-template-columns: 1fr 1fr;
+    }
+    .scroll-up{
+    display: flex;
+    justify-content: center;
+    }
+}

@@ -1,0 +1,146 @@
+/* Dokumenty.css - Premium SaaS Dashboard Layout */
+
+.page-wrapper {
+    padding: 1rem 2rem;
+    padding-top: 100px; /* Space for the fixed navbar */
+    max-width: 1600px;
+    margin: 0 auto;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 1.5rem;
+}
+
+.page-header h1 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.actions-group {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1rem;
+    background-color: rgba(31, 41, 55, 0.5);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    margin-bottom: 2rem;
+}
+
+.filter-group {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.filter-group .filter-label {
+    font-weight: 500;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    white-space: nowrap;
+}
+
+.filter-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.actions-chips {
+    flex-wrap: nowrap;
+}
+
+.chip {
+    padding: 8px 16px;
+    border: 1px solid var(--border-color);
+    border-radius: 50px;
+    background-color: var(--surface-2);
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    white-space: nowrap;
+}
+
+.actions-chips .chip {
+    padding-left: 12px;
+    padding-right: 12px;
+    font-size: 0.85rem;
+}
+
+.chip:hover {
+    background-color: #374151;
+    color: var(--text-primary);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.chip.active {
+    background-color: var(--accent-blue);
+    color: white;
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 15px rgba(56, 189, 248, 0.3);
+}
+
+
+@media (max-width: 768px) {
+    .actions-chips {
+        flex-wrap: wrap;
+    }
+    .actions-chips .chip {
+        flex-grow: 1;
+        flex-basis: calc(50% - 0.5rem);
+        text-align: center;
+    }
+    .pagination-controls{
+        flex-direction: row;
+        flex-wrap: wrap;
+        padding-bottom: 10px;
+    }
+
+    .year-chips {
+        flex-grow: 1; /* Make the container take available space */
+        flex-wrap: nowrap;
+        min-width: 0; /* Allow container to shrink */
+    }
+
+    .year-chips .chip {
+        flex-grow: 1;
+        flex-shrink: 1;
+        justify-content: center;
+        text-align: center;
+        padding: 0.5rem 0.25rem; /* Further reduce padding */
+        min-width: 0; /* Allow buttons to shrink below intrinsic size */
+        font-size: 0.8rem; /* Further reduce font size */
+    }
+    .scroll-up{
+    display: flex;
+    justify-content: center;
+    }
+}
+
+.loading-text, .error-text {
+    text-align: center;
+    padding: 3rem;
+    font-size: 1.2rem;
+    color: var(--text-secondary);
+}
+
+.error-text {
+    color: #ef4444;
+}

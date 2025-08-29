@@ -25,6 +25,11 @@
     font-weight: bold;
     font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif
 }
+h2 {
+    text-align: center;
+    margin-top: 20px;
+    margin-bottom: 10px; /* Reduced margin */
+}
 .year-charts{
     width: 100%;
     padding:10px;
@@ -33,6 +38,7 @@
     flex-wrap: nowrap;
     overflow: hidden;
     box-sizing: border-box;
+    gap: 15px; /* Add some gap between the chart rows */
 }
 .year-chart-income-container,
 .year-chart-expense-container{
@@ -40,7 +46,8 @@
     flex-direction: row;
     width: 100%;
     align-items: stretch;
-    gap:2px;
+    gap: 15px; /* Add some gap between the charts */
+    margin-bottom: 15px; /* Add some margin at the bottom */
 }
 .label-and-select-container{
     display: flex;
@@ -49,6 +56,10 @@
     align-items: baseline;
     font-size: 16px;
     gap: 20px;
+    background-color: #f8f9fa;
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 10px;
 }
 .label-and-select-container label{
     margin-bottom:8px;
@@ -59,7 +70,16 @@
     flex:1;
     position:relative;
     aspect-ratio: 16/9;
-    max-height: 50vh;
+    max-height: 60vh; /* Increased max-height slightly to allow for better aspect ratio */
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    padding: 15px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.canvas-wrapper:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 .canvas-wrapper canvas{
     width: 100% !important;

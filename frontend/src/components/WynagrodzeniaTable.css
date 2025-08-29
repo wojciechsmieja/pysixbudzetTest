@@ -1,0 +1,150 @@
+/*
+ * WynagrodzeniaTable.css - Dark Theme
+ */
+
+.wynagrodzenia-table-wrapper {
+    border: 1px solid var(--border-color);
+    border-radius: 0.75rem;
+    overflow: auto;
+    background-color: var(--surface-1);
+}
+.wynagrodzenia-table-wrapper::-webkit-scrollbar-corner{
+    background-color: var(--background);
+}
+
+.wynagrodzenia-table {
+    min-width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+    font-family: var(--font-sans);
+    table-layout: auto;
+}
+
+.wyn-th, .wyn-td {
+    padding: 0.5rem 0.5rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+    border-right: 1px solid var(--border-color);
+    transition: background-color 0.2s ease;
+}
+
+.wyn-th:last-child, .wyn-td:last-child {
+    border-right: none;
+}
+
+.wynagrodzenia-table thead tr:last-child th, .wynagrodzenia-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.wyn-th {
+    background-color: var(--surface-2);
+    color: var(--text-primary);
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.wyn-th:hover {
+    background-color: #343a4a;
+}
+
+.th-content {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+
+.wyn-th:first-child .th-content {
+    justify-content: flex-start;
+}
+
+.sort-indicator {
+    color: var(--accent-blue);
+}
+
+.sort-indicator-placeholder {
+    display: inline-block;
+    width: 1em;
+}
+
+.wynagrodzenia-table tbody tr:nth-child(even) {
+    background-color: rgba(0,0,0,0.1);
+}
+
+.wynagrodzenia-table tbody tr:hover {
+    background-color: var(--surface-2);
+}
+
+.td-osoba {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.td-total {
+    font-weight: 700;
+    color: var(--accent-blue);
+}
+
+.text-right {
+    text-align: right;
+    font-family: var(--font-sans);
+}
+
+.column-hover {
+    background-color: rgba(53, 162, 235, 0.15) !important;
+}
+
+.wynagrodzenia-table tbody tr:hover .column-hover {
+    background-color: rgba(53, 162, 235, 0.25) !important;
+}
+/* Toolbar & Search Input */
+.table-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 1rem ;
+}
+
+@media(max-width: 768px){
+    .wynagrodzenia-table-wrapper{
+        border: none;
+        background-color: transparent;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    .wynagrodzenia-table thead{
+        display: none;
+    }
+    .wynagrodzenia-table, .wynagrodzenia-table tbody, .wynagrodzenia-table tr{
+        display:block;
+        width:100%;
+    }
+    .wynagrodzenia-table tr{
+        background-color: var(--surface-1);
+        border: 1px solid var(--border-color);
+        border-radius: 0.75rem;
+        margin-bottom: 1rem;
+        padding:0.5rem;
+    }
+    .wynagrodzenia-table tbody tr:nth-child(even){
+        background-color: var(--surface-1);
+    }
+    .wynagrodzenia-table .wyn-td{
+        display:flex;
+        justify-content: space-between;
+        align-items:center;
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid var(--border-color);
+        text-align: right;
+    }
+    .wynagrodzenia-table .wyn-td:last-child{
+        border-bottom: none;
+    }
+    .wynagrodzenia-table .wyn-td::before{
+        content: attr(data-label);
+        font-weight: 600;
+        color: var(--text-primary);
+        text-align: left;
+        margin-right: 1rem;
+    }
+}

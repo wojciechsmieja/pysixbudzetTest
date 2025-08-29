@@ -1,0 +1,150 @@
+/*
+ * PodsumowanieTable.css - Dark Theme
+ */
+
+.summary-table-block {
+    margin-bottom: 2.5rem;
+}
+
+.summary-table-wrapper {
+    border: 1px solid var(--border-color);
+    border-radius: 0.75rem;
+    overflow: hidden;
+    background-color: var(--surface-1);
+}
+
+.summary-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+    font-family: var(--font-sans);
+    table-layout: auto;
+}
+
+.summary-th, .summary-td, .summary-tf {
+    padding: 0.5rem 0.5rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+    border-right: 1px solid var(--border-color);
+    transition: background-color 0.2s ease;
+}
+
+.summary-th:last-child, .summary-td:last-child, .summary-tf:last-child {
+    border-right: none;
+}
+
+.summary-table thead tr:last-child th, .summary-table tbody tr:last-child td, .summary-table tfoot tr:last-child td {
+    border-bottom: none;
+}
+
+.summary-th {
+    background-color: var(--surface-2);
+    color: var(--text-primary);
+    font-weight: 600;
+    text-align: center;
+}
+
+.summary-table tbody tr:nth-child(even) {
+    background-color: rgba(0,0,0,0.1);
+}
+
+.summary-table tbody tr:hover {
+    background-color: var(--surface-2);
+}
+
+.td-branch {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.td-total {
+    font-weight: 700;
+    color: var(--accent-blue);
+}
+
+.summary-tf {
+    background-color: var(--surface-2);
+    font-weight: 700;
+    color: var(--text-primary);
+    border-top: 2px solid var(--border-color);
+}
+
+.text-right {
+    text-align: right;
+    font-family: var(--font-sans);
+}
+
+.table-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+}
+
+.column-hover {
+    background-color: rgba(53, 162, 235, 0.15) !important;
+}
+
+.summary-table tbody tr:hover .column-hover {
+    background-color: rgba(53, 162, 235, 0.25) !important;
+}
+/* Toolbar & Search Input */
+.table-toolbar {
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* Responsive Card View for Mobile */
+@media (max-width: 768px) {
+    .summary-table-wrapper {
+        border: none;
+        background-color: transparent;
+    }
+
+    .summary-table thead {
+        display: none; /* Hide table header */
+    }
+
+    .summary-table, .summary-table tbody, .summary-table tr {
+        display: block;
+        width: 100%;
+    }
+
+    .summary-table tr {
+        background-color: var(--surface-1);
+        border: 1px solid var(--border-color);
+        border-radius: 0.75rem;
+        margin-bottom: 1rem;
+        padding: 0.5rem;
+    }
+    
+    .summary-table tbody tr:nth-child(even) {
+        background-color: var(--surface-1); /* Override zebra striping */
+    }
+
+    .summary-table td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid var(--border-color);
+        text-align: right;
+    }
+
+    .summary-table td:last-child {
+        border-bottom: none;
+    }
+
+    .summary-table td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: var(--text-primary);
+        text-align: left;
+        margin-right: 1rem;
+    }
+
+    /* Hide footer on mobile for simplicity */
+    .summary-table tfoot {
+        display: none;
+    }
+}

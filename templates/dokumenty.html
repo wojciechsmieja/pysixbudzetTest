@@ -194,7 +194,7 @@
     {% else %}
         <table class="data-table">
             <thead>
-                <tr>
+                <tr data-id="{{ row['lp.'] }}">
                     {% for col in rows[0].keys() %}
                         {% if col != 'Lp.'%}
                         <th class="sortable" data-column-index="{{ loop.index0 }}">{{ col }}</th>
