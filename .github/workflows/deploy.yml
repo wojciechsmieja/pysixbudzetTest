@@ -24,6 +24,16 @@ jobs:
         npm install
         npm run build
         cd ..
+    #remove pld folder build
+    - name: Remove old build folder
+      uses: appleboy/ssh-action@v0.1.10
+      with:
+        host: h64.seohost.pl
+        username: srv92995
+        key: ${{ secrets.SSH_KEY }}
+        port: 57185
+        script: |
+          rm -rf /home/srv92995/srv/pysixbudzet/frontend/build
     #Copy static folder to Seohost
     - name: Copy React build to server
       uses: appleboy/scp-action@v0.1.7
@@ -32,8 +42,10 @@ jobs:
         username: srv92995
         key: ${{ secrets.SSH_KEY }}
         port: 57185
-        source: "frontend/build/*"
+        source: "frontend/build/"
         target: "/home/srv92995/srv/pysixbudzet/frontend/build/"
+        script: |
+          rm-rf /home/srv92995/srv/pysixbudzet/frontend/build
     # Deploy przez SSH
     - name: Deploy to Seohost
       uses: appleboy/ssh-action@v0.1.10
