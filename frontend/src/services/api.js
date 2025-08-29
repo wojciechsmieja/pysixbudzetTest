@@ -56,4 +56,6 @@ export const file = {
     }
 };
 
-export default { auth, data, file };
+const api = {auth, data, file};
+
+export default api;

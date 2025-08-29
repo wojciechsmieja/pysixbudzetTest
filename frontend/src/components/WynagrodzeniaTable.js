@@ -13,7 +13,7 @@ const WynagrodzeniaTable = ({ data, monthsOrder, requestSort, sortConfig }) => {
             return row.Osoba && row.Osoba.toLowerCase().includes(filteredValue);
             }
         );
-    });
+    }, [data, globalFilter]);
     if (!data || data.length === 0) {
         return <p className="loading-text">Brak danych do wyświetlenia.</p>;
     }

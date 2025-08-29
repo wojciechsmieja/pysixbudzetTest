@@ -17,7 +17,7 @@ const AnalizaTable = ({ data, requestSort, sortConfig }) => {
         const filteredValue = globalFilter.toLowerCase();
         return kontrahenci_sorted.filter(kontrahent=>kontrahent.toLowerCase().includes(filteredValue));
         
-    }, [globalFilter, kontrahenci_sorted]);
+    }, [globalFilter, kontrahenci_sorted, data]);
     
     if (!data || !data.pivot) {
         return <p className="loading-text">Brak danych do wyświetlenia w tabeli.</p>;
