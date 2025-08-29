@@ -1,0 +1,53 @@
+name: Deploy Flask + React to Seohost
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    # Instalacja Node i build frontendu
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18
+
+    - name: Build React frontend
+      run: |
+        cd frontend
+        npm install
+        npm run build
+        cd ..
+    #Copy static folder to Seohost
+    - name: Copy React build to server
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: h64.seohost.pl
+        username: srv92995
+        key: ${{ secrets.SSH_KEY }}
+        port: 57185
+        source: "frontend/build/*"
+        target: "/home/srv92995/srv/pysixbudzet/frontend/build/"
+    # Deploy przez SSH
+    - name: Deploy to Seohost
+      uses: appleboy/ssh-action@v0.1.10
+      with:
+        host: h64.seohost.pl
+        username: srv92995
+        key: ${{ secrets.SSH_KEY }}
+        port: 57185
+        script: |
+          cd /home/srv92995/srv/pysixbudzet
+          git pull origin main
+          source /home/srv92995/virtualenv/srv/pysixbudzet/3.13/bin/activate
+          pip install -r requirements.txt
+          # Skopiuj build do serwera
+          touch /tmp/restart.txt
+
+
