@@ -50,7 +50,7 @@
         gap: 0.5rem;
     }
     .filter-chips-analysis .chip{
-        flex: 1 0 calc(50% - 0,5rem);
+        flex: 1 0 calc(50% - 0.5rem);
         text-align: center;
         display: inline-flex;
         align-items: center;
