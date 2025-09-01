@@ -4,6 +4,9 @@ import AddDataModal from '../components/AddDataModal';
 import DokumentyTable from '../components/DokumentyTable'; // <-- Import the new table
 import './Dokumenty.css';
 import '../components/DokumentyTable.css'; // <-- Import the table's CSS
+import PromptModal from '../components/PromptModal';
+import AlertModal from '../components/AlertModal';
+import ConfirmModal from '../components/ConfirmModal';
 
 // Inline SVG Icons for functional buttons
 const ImportIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>);
@@ -17,6 +20,11 @@ const DokumentyComponent = () => {
     const [error, setError] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingDocument, setEditingDocument] = useState(null);
+    const [isPromptOpen, setIsPromptOpen] = useState(false);
+    const [isAlertOpen, setIsAlertOpen] = useState(false);
+    const [alertContent, setAlertContent] = useState({title: '', message: ''});
+    const [recordToDeleteLp, setRecordToDeleteLp] = useState(null);
+    const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
     const [dataType, setDataType] = useState('Przychody');
     const [year, setYear] = useState(new Date().getFullYear());
@@ -78,23 +86,10 @@ const DokumentyComponent = () => {
         }
     };
 
-    const handleClearSheet = async () => {
-        const confirmation = prompt(`Aby trwale wyczyścić cały arkusz "${dataType}", wpisz słowo "USUŃ" i kliknij OK.`);
-        if (confirmation === 'USUŃ') {
-            try {
-                setLoading(true);
-                await api.data.clearSheet({ typ: dataType });
-                await fetchData();
-            } catch (err) {
-                setError(`Nie udało się wyczyścić arkusza: ${err.message}`);
-                setLoading(false);
-            }
-        } else {
-            if (confirmation !== null) {
-                alert("Anulowano. Arkusz nie został wyczyszczony.");
-            }
-        }
+    const handleClearSheet = () => {
+        setIsPromptOpen(true);
     };
+
 
     const handleAddOrUpdateData = async (formData) => {
         try {
@@ -111,6 +106,7 @@ const DokumentyComponent = () => {
             setError(`Nie udało się zapisać danych: ${err.message}`);
             setLoading(false);
         }
+        
     };
 
     const handleOpenAddModal = () => {
@@ -128,6 +124,39 @@ const DokumentyComponent = () => {
         setEditingDocument(null); // Clear editing state on close
     };
 
+    const handlePromptModalClose = () => {
+        setIsPromptOpen(false);
+    }
+    const handleAlertModalClose = () =>{
+        setIsAlertOpen(false);
+    }
+    const handleConfirmModalClose = () =>{
+        setIsConfirmOpen(false);
+    }
+    const handleDeleteClick = (lp) =>{
+        setRecordToDeleteLp(lp);
+        setIsConfirmOpen(true);
+    }
+
+    const handleConfirmDelete = async () => {
+        if(!recordToDeleteLp) return;
+
+        const oldData = {...data};
+        const newRows = data.rows.filter(row => row['Lp.'] !==recordToDeleteLp);
+        setData({...data, rows:newRows});
+
+        setIsConfirmOpen(false);
+
+        try{
+            await api.data.deleteDokument({lp: recordToDeleteLp, typ: dataType});
+        }catch (err) {
+            setError(`Nie udało się usunąć rekordu ${err.message}. Przywracanie.`);
+            setData(oldData);
+        }finally {
+            setRecordToDeleteLp(null);
+        }
+    };
+
     const handleImport = () => {
         const input = document.createElement('input');
         input.type = 'file';
@@ -142,7 +171,8 @@ const DokumentyComponent = () => {
             try {
                 setLoading(true);
                 const response = await api.file.upload(file);
-                alert(response.data.message);
+                setAlertContent({title: "Informacja o imporcie", message:response.data.message});
+                setIsAlertOpen(true);
                 await fetchData();
             } catch (err) {
                 const message = err.response ? err.response.data.message : err.message;
@@ -162,6 +192,39 @@ const DokumentyComponent = () => {
                 dataType={dataType}
                 initialData={editingDocument} // Pass data for editing
             />
+            <PromptModal
+                isOpen={isPromptOpen}
+                onClose={handlePromptModalClose}
+                onConfirm={async () =>{
+                    setIsPromptOpen(false);
+                    try{
+                        setLoading(true);
+                        await api.data.clearSheet({typ: dataType});
+                        await fetchData();
+                    }catch (err){
+                        setError(`Nie udało się wyczyścić danych: ${err.message}`);
+                    }finally{
+                        setLoading(false);
+                    }
+                }}
+                title="Potwierdź czyszczenie danych"
+                confirmationText="USUŃ"
+                >
+                    <p>Ta operacja usunie wszystkie dane z arkusza {dataType}. Wpisz <strong>USUŃ</strong>, aby potwierdzić operację.</p>
+                </PromptModal>
+                <AlertModal
+                    isOpen={isAlertOpen}
+                    onClose={handleAlertModalClose}
+                    title={alertContent.title}>
+                        <p>{alertContent.message}</p>
+                </AlertModal>
+                <ConfirmModal
+                    isOpen={isConfirmOpen}
+                    onClose={handleConfirmModalClose}
+                    onConfirm={handleConfirmDelete}
+                    title={"Potwierdzenie usunięcia?"}>
+                    <p>`Czy na pewno chcesz usunąć rekord o Lp. ${recordToDeleteLp}?`</p>
+                </ConfirmModal>
             <header className="page-header">
                 <h1>Zarządzanie dokumentami</h1>
             </header>
@@ -201,7 +264,7 @@ const DokumentyComponent = () => {
                         data={data.rows}
                         dataType={dataType} // <-- Pass data type to table
                         onEdit={handleOpenEditModal}
-                        onDelete={handleDelete}
+                        onDelete={handleDeleteClick}
                     />
                 )}
             </main>

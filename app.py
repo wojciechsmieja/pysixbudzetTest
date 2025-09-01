@@ -11,13 +11,21 @@ from config import Config
 from extensions import db
 from models import User
 from dotenv import load_dotenv
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 # Initialize app - serve the build directory
 app = Flask(__name__, static_folder='frontend/build', static_url_path='')
 CORS(app, supports_credentials=True)
 app.config.from_object(Config)
 db.init_app(app)
-
+#flask limiter initialization
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=["100 per day","5 per minute"],
+    storage_uri="memory://"
+)
 # Create tables if they don't exist
 with app.app_context():
     db.create_all()
@@ -93,6 +101,7 @@ def auth_status():
     return jsonify({'status': 'success', 'user': {'id': current_user.id, 'username': current_user.username, 'role': current_user.role}})
 
 @app.route('/api/auth/login', methods=['POST'])
+@limiter.limit("10 per minute")
 def login():
     print("--- LOGIN FUNCTION CALLED ---") # FINAL DEBUG
     if current_user.is_authenticated:
@@ -100,12 +109,18 @@ def login():
 
     data = request.get_json()
     username = data.get('username', '').strip()
-    password = data.get('password', '').encode('utf-8')
+    password_raw = data.get('password', '')
     print(f"--- LOGIN ATTEMPT: Username='{username}' ---")
 
-    if not username or not password:
+    if not username or not password_raw:
         print("DEBUG: Login failed - missing username or password.")
         return jsonify({'status': 'error', 'message': 'Podaj nazwę użytkownika i hasło'}), 400
+
+    if len(username) > 32 or len(password_raw) > 128:
+        print("DEBUG: Login failed - input too long.")
+        return ({'status':'error','message':'Nazwa użytkownika lub hasło jesy zbyt długiw=e'}), 400
+
+    password = password_raw.encode('utf-8')
 
     user = User.query.filter_by(username=username).first()
     print(f"DEBUG: User found in DB: {'Yes' if user else 'No'}")

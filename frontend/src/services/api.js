@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { redirect } from 'react-router-dom';
 
 const apiClient = axios.create({
     baseURL: '/api',
@@ -12,10 +13,11 @@ const apiClient = axios.create({
 apiClient.interceptors.response.use(response => {
     return response;
 }, error => {
-    if (error.response.status === 401) {
+    if (error.response.status === 401 && window.location.pathname !== '/login') {
         // For example, redirect to login or refresh token
         // For now, we just let the caller handle it
-        console.error("Authentication Error: ", error.response.data.message);
+        window.location.href = '/login';
+
     }
     return Promise.reject(error);
 });

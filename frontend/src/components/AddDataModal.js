@@ -70,10 +70,18 @@ const AddDataModal = ({ isOpen, onClose, onSubmit, dataType, initialData }) => {
         onSubmit(formData);
     };
 
+    const getHeaderLabel = (type) =>{
+        if(type === "Przychody"){
+            return "przychód";
+        }else{
+            return "wydatek";
+        }
+    }
+
     return (
         <div className="modal-overlay" onClick={onClose}>
             <div className="modal-content" onClick={e => e.stopPropagation()}>
-                <h2>{initialData ? `Edytuj ${dataType.slice(0, -1)}` : `Dodaj ${dataType.slice(0, -1)}`}</h2>
+                <h2>{initialData ? `Edytuj ${getHeaderLabel(dataType)}` : `Dodaj ${getHeaderLabel(dataType)}`}</h2>
                 <form onSubmit={handleSubmit} className="modal-form">
                     {fields.map(field => (
                         <div key={field} className="form-group">
@@ -82,9 +90,9 @@ const AddDataModal = ({ isOpen, onClose, onSubmit, dataType, initialData }) => {
                                 className="form-input"
                                 type={isDateField(field) ? 'date' : (typeof formData[field] === 'number' ? 'number' : 'text')}
                                 name={field}
-                                value={formData[field] || ''}
+                                value={formData[field] ?? ''}
                                 onChange={handleChange}
-                                required={field !== 'Lp.'}
+                                required={field !== 'Lp.' }
                                 disabled={field === 'Lp.'}
                             />
                         </div>

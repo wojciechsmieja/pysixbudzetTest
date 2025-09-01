@@ -39,6 +39,7 @@ export const AuthProvider = ({ children }) => {
                 return { success: false, message: response.data.message || 'Logowanie nie powiodło się.' };
             }
         } catch (error) {
+            
             let message = 'Logowanie nie powiodło się. Sprawdź konsolę, aby uzyskać więcej informacji.';
             if (error.response && error.response.data && error.response.data.message) {
                 message = error.response.data.message;

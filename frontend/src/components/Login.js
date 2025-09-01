@@ -22,6 +22,11 @@ function Login() {
             return;
         }
 
+        if(username.length > 32 || password.length>128){
+            setError('Za długa nazwa użytkownika lub hasło');
+            return;
+        }
+
         setLoading(true);
         const result = await auth.login(username, password);
         setLoading(false);
@@ -49,6 +54,7 @@ function Login() {
                                 onChange={(e) => setUsername(e.target.value)}
                                 placeholder="np. jan.kowalski"
                                 disabled={loading}
+                                maxLength={32}
                             />
                         </div>
                     </div>
@@ -62,6 +68,7 @@ function Login() {
                                 onChange={(e) => setPassword(e.target.value)}
                                 placeholder="••••••••"
                                 disabled={loading}
+                                maxLength={128}
                             />
                         </div>
                     </div>
