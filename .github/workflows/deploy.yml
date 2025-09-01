@@ -43,7 +43,7 @@ jobs:
         key: ${{ secrets.SSH_KEY }}
         port: 57185
         source: "frontend/build/"
-        target: "/home/srv92995/srv/pysixbudzet/"
+        target: "/home/srv92995/srv/pysixbudzet/frontend/"
     # Deploy przez SSH
     - name: Deploy to Seohost
       uses: appleboy/ssh-action@v0.1.10
