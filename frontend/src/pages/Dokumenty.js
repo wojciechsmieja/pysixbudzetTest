@@ -48,21 +48,6 @@ const DokumentyComponent = () => {
         fetchData();
     }, [fetchData]);
 
-    const handleDelete = async (lp) => {
-        if (window.confirm(`Czy na pewno chcesz usunąć rekord o Lp. ${lp}?`)) {
-            const oldData = { ...data };
-            const newRows = data.rows.filter(row => row['Lp.'] !== lp);
-            setData({ ...data, rows: newRows });
-
-            try {
-                await api.data.deleteDokument({ lp: lp, typ: dataType });
-            } catch (err) {
-                setError(`Nie udało się usunąć rekordu: ${err.message}. Przywracanie.`);
-                setData(oldData);
-            }
-        }
-    };
-
     const handleDownload = async () => {
         try {
             const response = await api.file.download();

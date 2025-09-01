@@ -23,7 +23,7 @@ db.init_app(app)
 limiter = Limiter(
     get_remote_address,
     app=app,
-    default_limits=["100 per day","5 per minute"],
+    default_limits=["1000 per day","50 per minute"],
     storage_uri="memory://"
 )
 # Create tables if they don't exist
